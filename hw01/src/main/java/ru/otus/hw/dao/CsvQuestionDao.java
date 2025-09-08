@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import ru.otus.hw.config.TestFileNameProvider;
 import ru.otus.hw.dao.dto.QuestionDto;
 import ru.otus.hw.domain.Question;
@@ -20,6 +21,8 @@ import java.util.List;
 @NoArgsConstructor(force = true)
 public class CsvQuestionDao implements QuestionDao {
     private final TestFileNameProvider fileNameProvider;
+
+    private final ResourceLoader resourceLoader;
 
     @SuppressWarnings("checkstyle:LineLength")
     @Override
