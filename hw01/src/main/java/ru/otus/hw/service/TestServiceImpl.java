@@ -2,10 +2,10 @@ package ru.otus.hw.service;
 
 import lombok.RequiredArgsConstructor;
 import ru.otus.hw.dao.QuestionDao;
+import ru.otus.hw.domain.Answer;
 import ru.otus.hw.domain.Question;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @RequiredArgsConstructor
 public class TestServiceImpl implements TestService {
@@ -18,17 +18,19 @@ public class TestServiceImpl implements TestService {
     public void executeTest() {
         ioService.printLine("");
         ioService.printFormattedLine("Please answer the questions below%n");
-        List<Question> questions = getQuestions();
-        questions.forEach(question -> {
-            ioService.printLine(question.text());
-            AtomicInteger counter = new AtomicInteger(1);
-            question.answers()
-                    .forEach(answer -> ioService.printLine(counter.getAndIncrement() + " " + answer.text()));
+        List<Question> questions = questionDao.findAll();
+        for (Question question: questions) {
+            ioService.printLine(convertQuestionToString(question).toString());
             int inputNumber = ioService.inputNumber();
-        });
+        }
     }
 
-    public List<Question> getQuestions() {
-        return questionDao.findAll();
+    private StringBuilder convertQuestionToString(Question question) {
+        StringBuilder questionString = new StringBuilder(question.text());
+        int counter = 0;
+        for (Answer answer: question.answers()) {
+            questionString.append("\n").append(++counter).append(" ").append(answer.text());
+        }
+        return questionString;
     }
 }

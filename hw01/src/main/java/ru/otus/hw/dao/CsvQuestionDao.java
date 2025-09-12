@@ -3,7 +3,6 @@ package ru.otus.hw.dao;
 import com.opencsv.bean.ColumnPositionMappingStrategy;
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
-import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -18,13 +17,11 @@ import java.io.Reader;
 import java.util.List;
 
 @RequiredArgsConstructor
-@NoArgsConstructor(force = true)
 public class CsvQuestionDao implements QuestionDao {
     private final TestFileNameProvider fileNameProvider;
 
     private final ResourceLoader resourceLoader;
 
-    @SuppressWarnings("checkstyle:LineLength")
     @Override
     public List<Question> findAll() {
         Resource resource = new ClassPathResource(fileNameProvider.getTestFileName());

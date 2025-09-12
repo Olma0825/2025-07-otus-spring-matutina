@@ -1,9 +1,15 @@
 package ru.otus.hw.service;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import ru.otus.hw.dao.QuestionDao;
 import ru.otus.hw.domain.Answer;
 import ru.otus.hw.domain.Question;
@@ -12,23 +18,28 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 public class TestServiceImplTest {
 
     @Mock
     private QuestionDao questionDao;
 
+    @Mock
+    private IOService ioService;
+
+    @InjectMocks
     private TestServiceImpl testService;
+
+    @Captor
+    private ArgumentCaptor<String> stringCaptor;
 
     private List<Question> testQuestions;
 
-    private IOService ioService;
-
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
+
         testService = new TestServiceImpl(ioService, questionDao);
         Question question1 = new Question("What is 2+2?",
                 Arrays.asList(
@@ -48,13 +59,51 @@ public class TestServiceImplTest {
     }
 
     @Test
-    void getQuestions_ShouldReturnQuestionsFromDao() {
+    @DisplayName("Должен корректно выводить все вопросы с ответами")
+    void shouldDisplayAllQuestionsWithAnswers() {
         when(questionDao.findAll()).thenReturn(testQuestions);
-        List<Question> result = testService.getQuestions();
-        assertNotNull(result);
-        assertEquals(2, result.size());
-        assertEquals("What is 2+2?", result.get(0).text());
-        assertEquals("Capital of Russia?", result.get(1).text());
-        verify(questionDao, times(1)).findAll();
+
+        testService.executeTest();
+
+        verify(ioService, times(1)).printLine("");
+        verify(ioService, times(1)).printFormattedLine("Please answer the questions below%n");
+        verify(ioService, times(3)).printLine(stringCaptor.capture());
+
+        List<String> capturedOutput = stringCaptor.getAllValues();
+
+        assertEquals("What is 2+2?\n1 3\n2 4\n3 5", capturedOutput.get(1));
+        assertEquals("Capital of Russia?\n1 London\n2 Moscow\n3 Berlin", capturedOutput.get(2));
+
+        verify(ioService, times(2)).inputNumber();
+    }
+
+    @Test
+    @DisplayName("Должен корректно обрабатывать пустой список вопросов")
+    void shouldHandleEmptyQuestionsList() {
+        when(questionDao.findAll()).thenReturn(List.of());
+
+        testService.executeTest();
+
+        verify(ioService, times(1)).printLine("");
+        verify(ioService, times(1)).printFormattedLine("Please answer the questions below%n");
+
+        verify(ioService, never()).inputNumber();
+    }
+
+    @Test
+    @DisplayName("Должен корректно обрабатывать вопрос без ответов")
+    void shouldHandleQuestionWithoutAnswers() {
+        Question questionWithoutAnswers = new Question("Question without answers?", List.of());
+        when(questionDao.findAll()).thenReturn(List.of(questionWithoutAnswers));
+
+        testService.executeTest();
+
+        verify(ioService, times(1)).printLine("");
+        verify(ioService, times(1)).printFormattedLine("Please answer the questions below%n");
+
+        verify(ioService, times(2)).printLine(stringCaptor.capture());
+        assertEquals("Question without answers?", stringCaptor.getValue());
+
+        verify(ioService, times(1)).inputNumber();
     }
 }

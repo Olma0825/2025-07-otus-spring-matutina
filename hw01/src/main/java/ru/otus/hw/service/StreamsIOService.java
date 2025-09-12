@@ -28,7 +28,7 @@ public class StreamsIOService implements IOService {
     }
 
     @Override
-    public int inputNumber() {
+    public int inputNumber() throws AnswerReadException {
         try {
             Scanner in = new Scanner(inputStream);
             return in.nextInt();
