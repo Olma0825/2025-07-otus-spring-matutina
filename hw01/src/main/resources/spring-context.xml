@@ -10,9 +10,6 @@
         <constructor-arg index="0">
             <util:constant static-field="java.lang.System.out"/>
         </constructor-arg>
-        <constructor-arg index="1">
-            <util:constant static-field="java.lang.System.in"/>
-        </constructor-arg>
     </bean>
     <bean id="appProperties" class="ru.otus.hw.config.AppProperties">
         <property name="testFileName" value="questions.csv"/>
@@ -28,6 +25,7 @@
     </bean>
     <bean id="testRunnerService" class="ru.otus.hw.service.TestRunnerServiceImpl">
         <constructor-arg name="testService" ref="testService"/>
+        <constructor-arg name="ioService" ref="ioService"/>
     </bean>
 
 </beans>

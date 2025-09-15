@@ -5,5 +5,4 @@ public interface IOService {
 
     void printFormattedLine(String s, Object ...args);
 
-    int inputNumber();
 }

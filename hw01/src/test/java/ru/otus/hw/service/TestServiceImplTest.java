@@ -21,7 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class TestServiceImplTest {
+public class
+TestServiceImplTest {
 
     @Mock
     private QuestionDao questionDao;
@@ -71,10 +72,9 @@ public class TestServiceImplTest {
 
         List<String> capturedOutput = stringCaptor.getAllValues();
 
-        assertEquals("What is 2+2?\n1 3\n2 4\n3 5", capturedOutput.get(1));
-        assertEquals("Capital of Russia?\n1 London\n2 Moscow\n3 Berlin", capturedOutput.get(2));
+        assertEquals(String.format("What is 2+2?%n1 3%n2 4%n3 5"), capturedOutput.get(1));
+        assertEquals(String.format("Capital of Russia?%n1 London%n2 Moscow%n3 Berlin"), capturedOutput.get(2));
 
-        verify(ioService, times(2)).inputNumber();
     }
 
     @Test
@@ -87,7 +87,6 @@ public class TestServiceImplTest {
         verify(ioService, times(1)).printLine("");
         verify(ioService, times(1)).printFormattedLine("Please answer the questions below%n");
 
-        verify(ioService, never()).inputNumber();
     }
 
     @Test
@@ -104,6 +103,5 @@ public class TestServiceImplTest {
         verify(ioService, times(2)).printLine(stringCaptor.capture());
         assertEquals("Question without answers?", stringCaptor.getValue());
 
-        verify(ioService, times(1)).inputNumber();
     }
 }
