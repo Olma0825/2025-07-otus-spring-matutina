@@ -45,7 +45,6 @@ TestServiceImplTest {
     void setUp() {
         student = new Student("Ivan", "Ivanov");
 
-        testService = new TestServiceImpl(ioService, questionDao);
         Question question1 = new Question("What is 2+2?",
                 Arrays.asList(
                         new Answer("3", false),

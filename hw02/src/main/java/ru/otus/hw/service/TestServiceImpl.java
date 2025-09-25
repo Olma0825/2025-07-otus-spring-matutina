@@ -8,6 +8,8 @@ import ru.otus.hw.domain.Question;
 import ru.otus.hw.domain.Student;
 import ru.otus.hw.domain.TestResult;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class TestServiceImpl implements TestService {
@@ -16,15 +18,20 @@ public class TestServiceImpl implements TestService {
 
     private final QuestionDao questionDao;
 
+    private String errorMessage = "Error, enter a number in the range from %s to %s";
+
     @Override
     public TestResult executeTestFor(Student student) {
         ioService.printLine("");
         ioService.printFormattedLine("Please answer the questions below%n");
         var questions = questionDao.findAll();
-        var testResult = new TestResult(student);
-        final int minAnswerOption = 1;
-        String errorMessage = "Error, enter a number in the range from %s to %s";
 
+        return getTestResult(questions, student);
+    }
+
+    private TestResult getTestResult(List<Question> questions, Student student) {
+        int minAnswerOption = 1;
+        var testResult = new TestResult(student);
         for (var question: questions) {
             int maxAnswerOption = question.answers().size();
             var isAnswerValid = false;
