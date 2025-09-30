@@ -34,8 +34,6 @@ TestServiceImplTest {
     @InjectMocks
     private TestServiceImpl testService;
 
-    @InjectMocks
-    private StudentServiceImpl studentService;
 
     private List<Question> testQuestions;
 
@@ -60,20 +58,6 @@ TestServiceImplTest {
                 ));
 
         testQuestions = Arrays.asList(question1, question2);
-    }
-
-    //это должно быть в StudentServiceImplTest.java
-    @Test
-    @DisplayName("Должен создавать студента")
-    void shouldCreateStudent() {
-        when(ioService.readStringWithPrompt("Please input your first name")).thenReturn("Ivan");
-        when(ioService.readStringWithPrompt("Please input your last name")).thenReturn("Ivanov");
-
-        Student student = studentService.determineCurrentStudent();
-
-        assertThat(student.firstName()).isEqualTo("Ivan");
-        assertThat(student.lastName()).isEqualTo("Ivanov");
-
     }
 
     @Test
