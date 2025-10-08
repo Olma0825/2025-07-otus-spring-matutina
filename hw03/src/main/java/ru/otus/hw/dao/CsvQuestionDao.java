@@ -6,7 +6,6 @@ import com.opencsv.bean.CsvToBeanBuilder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
 import ru.otus.hw.config.TestFileNameProvider;
 import ru.otus.hw.dao.dto.QuestionDto;
@@ -21,8 +20,6 @@ import java.util.List;
 @Component
 public class CsvQuestionDao implements QuestionDao {
     private final TestFileNameProvider fileNameProvider;
-
-    private final ResourceLoader resourceLoader;
 
     @Override
     public List<Question> findAll() {

@@ -35,11 +35,10 @@ public class TestServiceImpl implements TestService {
         for (var question: questions) {
             int maxAnswerOption = question.answers().size();
             var isAnswerValid = false;
-            String errorMessage = "Error, enter a number in the range from %s to %s";
             int answer = ioService.readIntForRangeWithPrompt(
                     minAnswerOption, maxAnswerOption,
                     convertQuestionToString(question),
-                    errorMessage);
+                    ioService.getMessage("TestService.get.result.error", minAnswerOption, maxAnswerOption));
             if (question.answers().get(answer - 1).isCorrect()) {
                 isAnswerValid = true;
             }
