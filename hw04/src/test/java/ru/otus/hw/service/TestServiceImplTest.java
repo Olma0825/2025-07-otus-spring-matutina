@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import ru.otus.hw.dao.QuestionDao;
 import ru.otus.hw.domain.Answer;
@@ -41,9 +40,6 @@ public class TestServiceImplTest {
 
     private Student student;
 
-    @Autowired
-    private ApplicationContext applicationContext;
-
     @BeforeEach
     void setUp() {
         student = new Student("Ivan", "Ivanov");
@@ -63,18 +59,6 @@ public class TestServiceImplTest {
                 ));
 
         testQuestions = Arrays.asList(question1, question2);
-    }
-
-    @Test
-    void listAllBeans() {
-        System.out.println("=== BEANS IN CONTEXT ===");
-        String[] beanNames = applicationContext.getBeanDefinitionNames();
-
-        for (String beanName : beanNames) {
-            Object bean = applicationContext.getBean(beanName);
-            System.out.printf("%s (%s)%n", beanName, bean.getClass().getName());
-        }
-        System.out.println("Total beans: " + beanNames.length);
     }
 
     @Test
