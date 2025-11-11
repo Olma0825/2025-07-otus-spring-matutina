@@ -22,7 +22,7 @@ public class JdbcGenreRepository implements GenreRepository {
 
     @Override
     public List<Genre> findAll() {
-        return jdbc.query("select * from genres", new GenreRowMapper());
+        return jdbc.query("select id, name from genres", new GenreRowMapper());
     }
 
     @Override

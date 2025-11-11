@@ -105,16 +105,8 @@ public class JdbcBookRepository implements BookRepository {
             Book book = new Book();
             book.setId(rs.getLong("id"));
             book.setTitle(rs.getString("title"));
-
-            Author author = new Author();
-            author.setId(rs.getLong("author_id"));
-            author.setFullName(rs.getString("full_name"));
-            book.setAuthor(author);
-
-            Genre genre = new Genre();
-            genre.setId(rs.getLong("genre_id"));
-            genre.setName(rs.getString("name"));
-            book.setGenre(genre);
+            book.setAuthor(new Author(rs.getLong("author_id"), rs.getString("full_name")));
+            book.setGenre(new Genre(rs.getLong("genre_id"), rs.getString("name")));
 
             return book;
         }

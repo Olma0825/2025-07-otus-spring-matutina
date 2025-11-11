@@ -22,7 +22,7 @@ public class JdbcAuthorRepository implements AuthorRepository {
 
     @Override
     public List<Author> findAll() {
-        return jdbc.query("select * from authors", new AuthorRowMapper());
+        return jdbc.query("select id, full_name from authors", new AuthorRowMapper());
     }
 
     @Override
