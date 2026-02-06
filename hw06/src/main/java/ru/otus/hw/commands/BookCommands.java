@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import ru.otus.hw.converters.BookConverter;
+import ru.otus.hw.dto.BookDetailsDto;
+import ru.otus.hw.dto.BookDto;
 import ru.otus.hw.services.BookService;
 
 import java.util.stream.Collectors;
@@ -25,16 +27,17 @@ public class BookCommands {
 
     @ShellMethod(value = "Find book by id", key = "bbid")
     public String findBookById(long id) {
-        return bookService.findById(id)
-                .map(bookConverter::bookToString)
-                .orElse("Book with id %d not found".formatted(id));
+        BookDto bookDto = bookService.findById(id);
+        return bookDto == null ? "Book with id %d not found".formatted(id)
+                : bookConverter.bookToString(bookService.findById(id));
     }
 
     //bbwc 1
     @ShellMethod(value = "Find book with comments", key = "bbwc")
     public String findBookWithComments(long id) {
-        return bookService.findBookWithComments(id).map(bookConverter::bookWithCommentsToString)
-                .orElse("Book with id %d not found".formatted(id));
+        BookDetailsDto bookDetailsDto = bookService.findBookWithComments(id);
+        return bookDetailsDto == null ? "Book with id %d not found".formatted(id)
+                : bookConverter.bookWithCommentsToString(bookDetailsDto);
     }
 
     // bins newBook 1 1

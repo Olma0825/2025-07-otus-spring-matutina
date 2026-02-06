@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import ru.otus.hw.converters.CommentConverter;
+import ru.otus.hw.dto.CommentDto;
 import ru.otus.hw.services.CommentService;
 
 import java.util.stream.Collectors;
@@ -24,8 +25,9 @@ public class CommentCommands {
 
     @ShellMethod(value = "Find comment by id", key = "cbid")
     String findById(long id) {
-        return commentService.findById(id).map(commentConverter::commentToString)
-                .orElse("Comment with id = %s not found ".formatted(id));
+        CommentDto commentDto = commentService.findById(id);
+        return commentDto == null ? "Comment with id = %s not found ".formatted(id)
+                : commentConverter.commentToString(commentDto);
     }
 
     @ShellMethod(value = "insert comment", key = "cins")

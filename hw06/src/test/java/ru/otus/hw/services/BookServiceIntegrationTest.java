@@ -1,90 +1,81 @@
 package ru.otus.hw.services;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+import ru.otus.hw.dto.BookDetailsDto;
+import ru.otus.hw.dto.BookDto;
+import ru.otus.hw.dto.CommentDto;
 import ru.otus.hw.models.Author;
 import ru.otus.hw.models.Book;
-import ru.otus.hw.models.Comment;
 import ru.otus.hw.models.Genre;
-import ru.otus.hw.repositories.*;
-
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
 
 @SpringBootTest
-@ActiveProfiles("test")
+@Transactional
 @DisplayName("Интеграционные тесты BookService")
 public class BookServiceIntegrationTest {
 
     @Autowired
     private BookService bookService;
 
-    @Autowired
-    private AuthorRepository authorRepository;
-
-    @Autowired
-    private GenreRepository genreRepository;
-
-    @Autowired
-    private BookRepository bookRepository;
-
-    @Autowired
-    private CommentRepository commentRepository;
+    @PersistenceContext
+    private EntityManager em;
 
     private Book book;
 
-    private Genre genre;
-
-    private Author author;
-
     @BeforeEach
     void setUp() {
-        genre = new Genre();
+        Genre genre = new Genre();
         genre.setName("Новый жанр");
-        genreRepository.save(genre);
+        em.persist(genre);
 
-        author = new Author();
+        Author author = new Author();
         author.setFullName("Новый автор");
-        authorRepository.save(author);
+        em.persist(author);
 
         book = new Book();
         book.setTitle("Название книги");
         book.setGenre(genre);
         book.setAuthor(author);
-        bookRepository.save(book);
+        book.addComment("Комментарий 1");
+        book.addComment("Комментарий 2");
+        em.persist(book);
 
-        Comment comment1 = new Comment("Комментарий 1", book);
-        Comment comment2 = new Comment("Комментарий 2", book);
-        commentRepository.save(comment1);
-        commentRepository.save(comment2);
+        em.flush();
+        em.clear();
     }
 
     @Test
-    @DisplayName("Должен загружать книгу с автором и жанром без LazyInitializationException")
-    @Transactional
+    @DisplayName("Должен загружать книгу с автором, жанром без LazyInitializationException")
     void shouldReturnBookById() {
-        Optional<Book> bookOptional = bookService.findById(book.getId());
+        BookDto actualBookDto = bookService.findById(book.getId());
 
-        assertThat(bookOptional).isPresent();
+        assertThat(actualBookDto.title()).isEqualTo("Название книги");
+        assertThat(actualBookDto.author().getFullName()).isEqualTo("Новый автор");
+        assertThat(actualBookDto.genre().getName()).isEqualTo("Новый жанр");
+    }
 
-        Book actualBook = bookOptional.get();
+    @Test
+    @DisplayName("Должен загружать книгу с автором, жанром и комментариями без LazyInitializationException")
+    void shouldReturnBookWithComments() {
+        BookDetailsDto actualBookDto = bookService.findBookWithComments(book.getId());
 
-        assertThatCode(() -> {
-            String authorName = actualBook.getAuthor().getFullName();
-            String genreName = actualBook.getGenre().getName();
-
-            assertThat(authorName).isEqualTo(author.getFullName());
-            assertThat(genreName).isEqualTo(genre.getName());
-        }).doesNotThrowAnyException();
-
-        System.out.println("Test completed");
+        assertThat(actualBookDto.title()).isEqualTo("Название книги");
+        assertThat(actualBookDto.author().getFullName()).isEqualTo("Новый автор");
+        assertThat(actualBookDto.genre().getName()).isEqualTo("Новый жанр");
+        assertThat(actualBookDto.comments())
+                .isNotNull()
+                .hasSize(2);
+        assertThat(actualBookDto.comments())
+                .extracting(CommentDto::body)
+                .containsExactlyInAnyOrder("Комментарий 1", "Комментарий 2");
     }
 
 }

@@ -3,6 +3,8 @@ package ru.otus.hw.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.otus.hw.dto.BookDetailsDto;
+import ru.otus.hw.dto.BookDto;
 import ru.otus.hw.exceptions.EntityNotFoundException;
 import ru.otus.hw.models.Book;
 import ru.otus.hw.repositories.AuthorRepository;
@@ -10,7 +12,6 @@ import ru.otus.hw.repositories.BookRepository;
 import ru.otus.hw.repositories.GenreRepository;
 
 import java.util.List;
-import java.util.Optional;
 
 @RequiredArgsConstructor
 @Service
@@ -23,32 +24,34 @@ public class BookServiceImpl implements BookService {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<Book> findById(long id) {
-        return bookRepository.findById(id);
+    public BookDto findById(long id) {
+        return BookDto.toDto(bookRepository.findById(id).orElse(null));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<Book> findAll() {
-        return bookRepository.findAll();
+    public List<BookDto> findAll() {
+        return bookRepository.findAll()
+                .stream()
+                .map(BookDto::toDto).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<Book> findBookWithComments(long id) {
-        return bookRepository.findBookWithComments(id);
+    public BookDetailsDto findBookWithComments(long id) {
+        return BookDetailsDto.toDto(bookRepository.findBookWithComments(id).orElse(null));
     }
 
     @Override
     @Transactional
-    public Book insert(String title, long authorId, long genreId) {
-        return save(0, title, authorId, genreId);
+    public BookDto insert(String title, long authorId, long genreId) {
+        return BookDto.toDto(save(0, title, authorId, genreId));
     }
 
     @Override
     @Transactional
-    public Book update(long id, String title, long authorId, long genreId) {
-        return save(id, title, authorId, genreId);
+    public BookDto update(long id, String title, long authorId, long genreId) {
+        return BookDto.toDto(save(id, title, authorId, genreId));
     }
 
     @Override

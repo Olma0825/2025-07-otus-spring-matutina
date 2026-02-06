@@ -26,7 +26,6 @@ public class BookRepositoryImpl implements BookRepository {
         query.setParameter("id", id);
         List<Book> books = query.getResultList();
         return books.isEmpty() ? Optional.empty() : Optional.of(books.get(0));
-
     }
 
     @Override

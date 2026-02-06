@@ -54,6 +54,16 @@ public class Book {
         this.genre = genre;
     }
 
+    public void addComment(Comment comment) {
+        comments.add(comment);
+        comment.setBook(this);
+    }
+
+    public void addComment(String body) {
+        Comment comment = new Comment(body, this);
+        comments.add(comment);
+    }
+
     @Override
     public boolean equals(Object object) {
         if (object == null || getClass() != object.getClass()) {
