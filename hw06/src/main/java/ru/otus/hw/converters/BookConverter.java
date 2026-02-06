@@ -5,8 +5,6 @@ import org.springframework.stereotype.Component;
 import ru.otus.hw.dto.BookDetailsDto;
 import ru.otus.hw.dto.BookDto;
 import ru.otus.hw.dto.CommentDto;
-import ru.otus.hw.models.Book;
-import ru.otus.hw.models.Comment;
 
 import java.util.List;
 import java.util.stream.Collectors;
