@@ -9,12 +9,12 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public class GenreRepositoryImpl implements GenreRepository {
+public class JpaGenreRepository implements GenreRepository {
 
     @PersistenceContext
     private final EntityManager em;
 
-    public GenreRepositoryImpl(EntityManager em) {
+    public JpaGenreRepository(EntityManager em) {
         this.em = em;
     }
 

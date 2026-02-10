@@ -10,8 +10,6 @@ public interface BookRepository {
 
     List<Book> findAll();
 
-    Optional<Book> findBookWithComments(long id);
-
     Book save(Book book);
 
     void deleteById(long id);

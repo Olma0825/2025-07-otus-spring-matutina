@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
-import org.springframework.transaction.annotation.Transactional;
 import ru.otus.hw.models.Author;
 import ru.otus.hw.models.Book;
 import ru.otus.hw.models.Comment;
@@ -21,19 +20,19 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@Import(CommentRepositoryImpl.class)
+@Import(JpaCommentRepository.class)
 @DisplayName("Репозиторий для работы с комментариями")
-public class CommentRepositoryImplTest {
+public class JpaCommentRepositoryTest {
 
     @Autowired
     private TestEntityManager em;
 
     @Autowired
-    private CommentRepositoryImpl repository;
+    private JpaCommentRepository repository;
 
-    List<Comment> commentList;
+    private List<Comment> commentList;
 
-    Book book;
+    private Book book;
 
     @BeforeEach
     void setUp() {
@@ -62,8 +61,6 @@ public class CommentRepositoryImplTest {
         commentList.add(comment2);
         em.persist(comment1);
         em.persist(comment2);
-
-        book.setComments(commentList);
 
         em.flush();
     }
@@ -100,12 +97,11 @@ public class CommentRepositoryImplTest {
         assertThat(savedComment.getBody()).isEqualTo(comment.getBody());
         assertThat(savedComment.getBook()).isEqualTo(book);
         assertThat(savedComment.getCreatedAt()).isNotNull();
-        assertThat(savedComment.getCreatedAt()).isBefore(LocalDateTime.now());
+        assertThat(savedComment.getCreatedAt()).isBeforeOrEqualTo(LocalDateTime.now());
     }
 
     @Test
     @DisplayName("Должен удалить комментарий")
-    @Transactional
     void shouldRemoveComment() {
         Comment comment = commentList.get(0);
         repository.delete(comment.getId());
@@ -115,9 +111,5 @@ public class CommentRepositoryImplTest {
 
         Comment found = em.find(Comment.class, comment.getId());
         assertThat(found).isNull();
-
-        Book bookFromDb = em.find(Book.class, book.getId());
-        assertThat(bookFromDb).isNotNull();
-        assertThat(bookFromDb.getComments()).hasSize(1);
     }
 }

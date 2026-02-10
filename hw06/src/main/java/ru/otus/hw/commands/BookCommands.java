@@ -38,6 +38,7 @@ public class BookCommands {
         BookDetailsDto bookDetailsDto = bookService.findBookWithComments(id);
         return bookDetailsDto == null ? "Book with id %d not found".formatted(id)
                 : bookConverter.bookWithCommentsToString(bookDetailsDto);
+
     }
 
     // bins newBook 1 1

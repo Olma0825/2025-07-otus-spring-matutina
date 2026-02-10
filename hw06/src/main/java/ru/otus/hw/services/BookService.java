@@ -10,11 +10,12 @@ public interface BookService {
 
     List<BookDto> findAll();
 
-    BookDetailsDto findBookWithComments(long id);
-
     BookDto insert(String title, long authorId, long genreId);
 
     BookDto update(long id, String title, long authorId, long genreId);
 
     void deleteById(long id);
+
+    BookDetailsDto findBookWithComments(long id);
+
 }

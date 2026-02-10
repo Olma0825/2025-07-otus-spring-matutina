@@ -7,8 +7,10 @@ import ru.otus.hw.dto.BookDetailsDto;
 import ru.otus.hw.dto.BookDto;
 import ru.otus.hw.exceptions.EntityNotFoundException;
 import ru.otus.hw.models.Book;
+import ru.otus.hw.models.Comment;
 import ru.otus.hw.repositories.AuthorRepository;
 import ru.otus.hw.repositories.BookRepository;
+import ru.otus.hw.repositories.CommentRepository;
 import ru.otus.hw.repositories.GenreRepository;
 
 import java.util.List;
@@ -22,10 +24,23 @@ public class BookServiceImpl implements BookService {
 
     private final BookRepository bookRepository;
 
+    private final CommentRepository commentRepository;
+
     @Override
     @Transactional(readOnly = true)
     public BookDto findById(long id) {
-        return BookDto.toDto(bookRepository.findById(id).orElse(null));
+
+        return BookDto.toDto(bookRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Book with id=%d not found".formatted(id))));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public BookDetailsDto findBookWithComments(long id) {
+        Book book = bookRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Book with id=%d not found".formatted(id)));
+        List<Comment> comments = commentRepository.findByBookId(id);
+        return BookDetailsDto.toDto(book, comments);
     }
 
     @Override
@@ -34,12 +49,6 @@ public class BookServiceImpl implements BookService {
         return bookRepository.findAll()
                 .stream()
                 .map(BookDto::toDto).toList();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public BookDetailsDto findBookWithComments(long id) {
-        return BookDetailsDto.toDto(bookRepository.findBookWithComments(id).orElse(null));
     }
 
     @Override

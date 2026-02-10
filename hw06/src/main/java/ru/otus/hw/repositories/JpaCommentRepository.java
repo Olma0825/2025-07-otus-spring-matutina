@@ -12,7 +12,7 @@ import java.util.Optional;
 
 @Repository
 @AllArgsConstructor
-public class CommentRepositoryImpl implements CommentRepository {
+public class JpaCommentRepository implements CommentRepository {
 
     @PersistenceContext
     private final EntityManager em;
@@ -38,8 +38,9 @@ public class CommentRepositoryImpl implements CommentRepository {
 
     @Override
     public void delete(long id) {
-        em.createQuery("delete from Comment c where c.id = :id")
-                .setParameter("id", id)
-                .executeUpdate();
+        Comment comment = em.find(Comment.class, id);
+        if (comment != null) {
+            em.remove(comment);
+        }
     }
 }

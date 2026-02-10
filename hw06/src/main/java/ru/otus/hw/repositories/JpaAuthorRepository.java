@@ -10,12 +10,12 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public class AuthorRepositoryImpl implements AuthorRepository {
+public class JpaAuthorRepository implements AuthorRepository {
 
     @PersistenceContext
-    private EntityManager em;
+    private final EntityManager em;
 
-    public AuthorRepositoryImpl(EntityManager em) {
+    public JpaAuthorRepository(EntityManager em) {
         this.em = em;
     }
 

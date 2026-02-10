@@ -27,7 +27,7 @@ public class BookConverter {
     }
 
     public String bookWithCommentsToString(BookDetailsDto book) {
-        List<CommentDto> commentList = book.comments();
+        List<CommentDto> commentList = book.commentDtos();
         String commentsString = commentList.stream().map(commentConverter::commentToString).map(s -> "\t" + s)
                 .collect(Collectors.joining("," + System.lineSeparator()));
         return "Id: %d, title: %s, author: {%s}, genres: [%s], comments: [%s]".formatted(
@@ -37,4 +37,5 @@ public class BookConverter {
                 genreConverter.genreToString(book.genre()),
                 commentsString);
     }
+
 }

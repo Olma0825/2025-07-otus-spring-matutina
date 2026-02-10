@@ -17,11 +17,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("Репозиторий для работы с жанрами ")
 @DataJpaTest
-@Import(GenreRepositoryImpl.class)
-public class GenreRepositoryImplTest {
+@Import(JpaGenreRepository.class)
+public class JpaGenreRepositoryTest {
 
     @Autowired
-    GenreRepositoryImpl repository;
+    JpaGenreRepository repository;
 
     @Autowired
     private TestEntityManager em;
