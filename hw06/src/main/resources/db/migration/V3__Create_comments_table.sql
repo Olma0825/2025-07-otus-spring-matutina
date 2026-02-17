@@ -5,3 +5,4 @@ create table comments (
     book_id bigint,
     primary key (id)
 );
+create SEQUENCE IF not exists comment_sequence START with 1000 INCREMENT by 1;

@@ -1,18 +1,16 @@
 package ru.otus.hw.dto;
 
-import ru.otus.hw.models.Author;
 import ru.otus.hw.models.Book;
-import ru.otus.hw.models.Genre;
 
 public record BookDto(
 
-    long id,
+        long id,
 
-    String title,
+        String title,
 
-    Author author,
+        AuthorDto author,
 
-    Genre genre
+        GenreDto genre
 ) {
     public static BookDto toDto(Book book) {
 
@@ -20,6 +18,16 @@ public record BookDto(
             return null;
         }
 
-        return new BookDto(book.getId(), book.getTitle(), book.getAuthor(), book.getGenre());
+        return new BookDto(book.getId(), book.getTitle(), AuthorDto.toDto(book.getAuthor()),
+                GenreDto.toDto(book.getGenre()));
+    }
+
+    public static Book toBook(BookDto bookDto) {
+        if (bookDto == null) {
+            return null;
+        }
+
+        return new Book(bookDto.id, bookDto.title, AuthorDto.toAuthor(bookDto.author),
+                GenreDto.toGenre(bookDto.genre));
     }
 }

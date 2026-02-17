@@ -1,18 +1,14 @@
 package ru.otus.hw.models;
 
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 @Data
@@ -26,14 +22,6 @@ public class Genre {
     private long id;
 
     private String name;
-
-    @OneToMany(mappedBy = "genre", fetch = FetchType.LAZY)
-    private List<Book> books = new ArrayList<>();
-
-    public Genre(long id, String name) {
-        this.id = id;
-        this.name = name;
-    }
 
     public Genre(String name) {
         this.name = name;

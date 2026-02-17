@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -23,7 +24,13 @@ import java.util.Objects;
 public class Comment {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "comment_seq")
+    @SequenceGenerator(
+            name = "comment_seq",
+            sequenceName = "comment_sequence",
+            allocationSize = 1,
+            initialValue = 1000
+    )
     private long id;
 
     private String body;

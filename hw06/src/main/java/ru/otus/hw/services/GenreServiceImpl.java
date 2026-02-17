@@ -3,11 +3,12 @@ package ru.otus.hw.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.otus.hw.dto.GenreDto;
+import ru.otus.hw.exceptions.EntityNotFoundException;
 import ru.otus.hw.models.Genre;
 import ru.otus.hw.repositories.GenreRepository;
 
 import java.util.List;
-import java.util.Optional;
 
 @RequiredArgsConstructor
 @Service
@@ -16,29 +17,34 @@ public class GenreServiceImpl implements GenreService {
 
     @Transactional(readOnly = true)
     @Override
-    public List<Genre> findAll() {
-        return genreRepository.findAll();
+    public List<GenreDto> findAll() {
+        return genreRepository.findAll().stream().map(GenreDto::toDto).toList();
     }
 
     @Transactional(readOnly = true)
     @Override
-    public Optional<Genre> findById(long id) {
-        return genreRepository.findById(id);
+    public GenreDto findById(long id) {
+        Genre genre = genreRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Genre with id=%d not found".formatted(id)));
+        return GenreDto.toDto(genre);
     }
 
-    private Genre save(long id, String name) {
-        return genreRepository.save(new Genre(id, name));
+    private GenreDto save(long id, String name) {
+
+        return GenreDto.toDto(genreRepository.save(new Genre(id, name)));
     }
 
     @Override
     @Transactional
-    public Genre insert(String name) {
+    public GenreDto insert(String name) {
+
         return save(0, name);
     }
 
     @Override
     @Transactional
-    public Genre update(long id, String name) {
+    public GenreDto update(long id, String name) {
+
         return save(id, name);
     }
 

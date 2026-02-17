@@ -17,19 +17,19 @@ import java.util.Optional;
 public class JpaBookRepository implements BookRepository {
 
     @PersistenceContext
-    private EntityManager em;
+    private final EntityManager em;
 
     public JpaBookRepository(EntityManager em) {
+
         this.em = em;
     }
 
     @Override
     public Optional<Book> findById(long id) {
-        EntityGraph<Book> bookGraph = em.createEntityGraph(Book.class);
-        bookGraph.addAttributeNodes("author", "genre");
+        EntityGraph<?> bookGraph = em.getEntityGraph("book-author-genre-entity-graph");
 
         Map<String, Object> properties = new HashMap<>();
-        properties.put("javax.persistence.fetchgraph", bookGraph);
+        properties.put("jakarta.persistence.fetchgraph", bookGraph);
 
         Book book = em.find(Book.class, id, properties);
         return Optional.ofNullable(book);
@@ -37,8 +37,10 @@ public class JpaBookRepository implements BookRepository {
 
     @Override
     public List<Book> findAll() {
-        String jpql = "select b from Book b join fetch b.author left join fetch b.genre";
+        EntityGraph<?> bookGraph = em.getEntityGraph("book-author-genre-entity-graph");
+        String jpql = "select b from Book b";
         TypedQuery<Book> query = em.createQuery(jpql, Book.class);
+        query.setHint("jakarta.persistence.fetchgraph", bookGraph);
         return query.getResultList();
     }
 

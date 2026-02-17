@@ -104,7 +104,7 @@ public class JpaCommentRepositoryTest {
     @DisplayName("Должен удалить комментарий")
     void shouldRemoveComment() {
         Comment comment = commentList.get(0);
-        repository.delete(comment.getId());
+        repository.deleteById(comment.getId());
 
         em.flush();
         em.clear();

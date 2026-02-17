@@ -66,6 +66,11 @@ public class BookServiceImpl implements BookService {
     @Override
     @Transactional
     public void deleteById(long id) {
+
+        List<Comment> comments = commentRepository.findByBookId(id);
+        for (Comment comment: comments) {
+            commentRepository.deleteById(comment.getId());
+        }
         bookRepository.deleteById(id);
     }
 

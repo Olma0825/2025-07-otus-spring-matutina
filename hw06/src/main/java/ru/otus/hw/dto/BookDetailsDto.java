@@ -1,9 +1,7 @@
 package ru.otus.hw.dto;
 
-import ru.otus.hw.models.Author;
 import ru.otus.hw.models.Book;
 import ru.otus.hw.models.Comment;
-import ru.otus.hw.models.Genre;
 
 import java.util.List;
 
@@ -13,9 +11,9 @@ public record BookDetailsDto(
 
     String title,
 
-    Author author,
+    AuthorDto author,
 
-    Genre genre,
+    GenreDto genre,
 
     List<CommentDto> commentDtos
 ) {
@@ -25,7 +23,8 @@ public record BookDetailsDto(
             return null;
         }
 
-        return new BookDetailsDto(book.getId(), book.getTitle(), book.getAuthor(), book.getGenre(),
+        return new BookDetailsDto(book.getId(), book.getTitle(), AuthorDto.toDto(book.getAuthor()),
+                GenreDto.toDto(book.getGenre()),
                 comments.stream().map(CommentDto::toDto).toList());
     }
 }

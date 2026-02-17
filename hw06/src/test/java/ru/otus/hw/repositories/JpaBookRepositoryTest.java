@@ -12,7 +12,6 @@ import ru.otus.hw.models.Book;
 import ru.otus.hw.models.Genre;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -70,20 +69,23 @@ class JpaBookRepositoryTest {
     void shouldSaveNewBook() {
         var expectedBook = new Book(0, "BookTitle_10500", dbAuthors.get(0), dbGenres.get(0));
         var returnedBook = bookRepository.save(expectedBook);
-        assertThat(returnedBook).isNotNull()
-                .matches(book -> book.getId() > 0)
-                .usingRecursiveComparison().ignoringExpectedNullFields().isEqualTo(expectedBook);
+        assertThat(returnedBook.getId()).isGreaterThan(0);
+        em.flush();
+        em.clear();
 
-        assertThat(bookRepository.findById(returnedBook.getId()))
-                .isPresent()
-                .get()
-                .isEqualTo(returnedBook);
+
+        Book actualBook = em.find(Book.class, returnedBook.getId());
+        assertThat(actualBook)
+                .usingRecursiveComparison()
+                .ignoringExpectedNullFields()
+                .isEqualTo(expectedBook);
     }
 
     @DisplayName("должен сохранять измененную книгу")
     @Test
     void shouldSaveUpdatedBook() {
-        var expectedBook = dbBooks.get(0);
+        var expectedBook1 = dbBooks.get(0);
+        var expectedBook = new Book(expectedBook1.getId());
         expectedBook.setTitle("New name");
         expectedBook.setAuthor(dbAuthors.get(1));
         expectedBook.setGenre(dbGenres.get(1));
@@ -92,16 +94,16 @@ class JpaBookRepositoryTest {
         em.flush();
         em.clear();
 
-        Optional<Book> foundBook = bookRepository.findById(savedBook.getId());
+        Book foundBook = em.find(Book.class, savedBook.getId());
 
         assertThat(foundBook)
-                .isPresent()
-                .get()
-                .usingRecursiveComparison()
-                .ignoringFields("author", "genre")
-                .isEqualTo(expectedBook);
-        assertThat(foundBook.get().getAuthor()).isEqualTo(dbAuthors.get(1));
-        assertThat(foundBook.get().getGenre()).isEqualTo(dbGenres.get(1));
+                .isNotNull()
+                .satisfies(book -> {
+                    assertThat(book.getId()).isEqualTo(expectedBook.getId());
+                    assertThat(book.getTitle()).isEqualTo(expectedBook.getTitle());
+                    assertThat(book.getAuthor().getId()).isEqualTo(expectedBook.getAuthor().getId());
+                    assertThat(book.getGenre().getId()).isEqualTo(expectedBook.getGenre().getId());
+                });
 
     }
 
@@ -127,9 +129,15 @@ class JpaBookRepositoryTest {
         em.clear();
 
         long bookId = book.getId();
-        assertThat(bookRepository.findById(bookId)).isPresent();
+        Book foundBook = em.find(Book.class, bookId);
+        assertThat(foundBook).isNotNull();
+
         bookRepository.deleteById(bookId);
-        assertThat(bookRepository.findById(bookId)).isEmpty();
+        em.flush();
+        em.clear();
+
+        foundBook = em.find(Book.class, bookId);
+        assertThat(foundBook).isNull();
     }
 
     private List<Author> getDbAuthors() {

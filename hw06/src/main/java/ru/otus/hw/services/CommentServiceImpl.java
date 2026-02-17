@@ -27,7 +27,8 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public CommentDto findById(long id) {
-        return CommentDto.toDto(commentRepository.findById(id).orElse(null));
+        return CommentDto.toDto(commentRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Comment with id=%d not found".formatted(id))));
     }
 
     @Transactional
@@ -51,6 +52,6 @@ public class CommentServiceImpl implements CommentService {
     @Override
     @Transactional
     public void delete(long id) {
-        commentRepository.delete(id);
+        commentRepository.deleteById(id);
     }
 }

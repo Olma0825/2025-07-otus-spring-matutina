@@ -8,6 +8,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedAttributeNode;
+import jakarta.persistence.NamedEntityGraph;
 import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,6 +20,8 @@ import java.util.Objects;
 @Entity
 @Table(name = "books")
 @NoArgsConstructor
+@NamedEntityGraph(name = "book-author-genre-entity-graph",
+        attributeNodes = {@NamedAttributeNode("author"), @NamedAttributeNode("genre")})
 public class Book {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -46,6 +50,10 @@ public class Book {
         this.title = title;
         this.author = author;
         this.genre = genre;
+    }
+
+    public Book(long id) {
+        this.id = id;
     }
 
     @Override

@@ -7,5 +7,6 @@ values ('Genre_1'), ('Genre_2'), ('Genre_3'), ('Genre_4'), ('Genre_5'), ('Genre_
 insert into books(title, author_id, genre_id)
 values ('BookTitle_1', 1, 1), ('BookTitle_2', 2, 2), ('BookTitle_3', 3, 3);
 
-insert into comments(body, book_id)
-values ('comment_1_1', 1), ('comment_1_2', 1), ('comment_2_1', 2);
+insert into comments(id, body, book_id)
+values (nextval('comment_sequence'), 'comment_1_1', 1), (nextval('comment_sequence'), 'comment_1_2', 1),
+(nextval('comment_sequence'), 'comment_2_1', 2);
