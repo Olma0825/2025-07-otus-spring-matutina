@@ -24,13 +24,7 @@ import java.util.Objects;
 public class Comment {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "comment_seq")
-    @SequenceGenerator(
-            name = "comment_seq",
-            sequenceName = "comment_sequence",
-            allocationSize = 1,
-            initialValue = 1000
-    )
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
     private String body;

@@ -13,5 +13,4 @@ insert into books(id, title, author_id, genre_id)
 values (100, 'BookTitle_1', 1, 1), (101, 'BookTitle_2', 2, 2), (102, 'BookTitle_3', 3, 3);
 
 insert into comments(id, body, book_id)
-values (nextval('comment_sequence'), 'comment_1_1', 100), (nextval('comment_sequence'), 'comment_1_2', 100),
-(nextval('comment_sequence'), 'comment_2_1', 101);
+values (1000, 'comment_1_1', 100), (1001, 'comment_1_2', 100), (1002, 'comment_2_1', 101);
