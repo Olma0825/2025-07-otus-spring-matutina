@@ -15,13 +15,11 @@ import java.util.List;
 public class GenreServiceImpl implements GenreService {
     private final GenreRepository genreRepository;
 
-    @Transactional(readOnly = true)
     @Override
     public List<GenreDto> findAll() {
         return genreRepository.findAll().stream().map(GenreDto::toDto).toList();
     }
 
-    @Transactional(readOnly = true)
     @Override
     public GenreDto findById(long id) {
         Genre genre = genreRepository.findById(id)

@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class JpaGenreRepositoryTest {
 
     @Autowired
-    JpaGenreRepository repository;
+    private JpaGenreRepository repository;
 
     @Autowired
     private TestEntityManager em;

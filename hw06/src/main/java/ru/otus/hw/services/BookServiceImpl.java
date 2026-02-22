@@ -27,7 +27,6 @@ public class BookServiceImpl implements BookService {
     private final CommentRepository commentRepository;
 
     @Override
-    @Transactional(readOnly = true)
     public BookDto findById(long id) {
 
         return BookDto.toDto(bookRepository.findById(id)
@@ -44,7 +43,6 @@ public class BookServiceImpl implements BookService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<BookDto> findAll() {
         return bookRepository.findAll()
                 .stream()

@@ -15,14 +15,12 @@ import java.util.List;
 public class AuthorServiceImpl implements AuthorService {
     private final AuthorRepository authorRepository;
 
-    @Transactional(readOnly = true)
     @Override
     public List<AuthorDto> findAll() {
 
         return authorRepository.findAll().stream().map(AuthorDto::toDto).toList();
     }
 
-    @Transactional(readOnly = true)
     @Override
     public AuthorDto findById(long id) {
 
