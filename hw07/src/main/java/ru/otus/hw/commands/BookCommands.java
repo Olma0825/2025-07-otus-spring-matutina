@@ -35,7 +35,7 @@ public class BookCommands {
     //bbwc 1
     @ShellMethod(value = "Find book with comments", key = "bbwc")
     public String findBookWithComments(long id) {
-        BookDetailsDto bookDetailsDto = bookService.findBookWithComments(id);
+        BookDetailsDto bookDetailsDto = bookService.findBookByIdWithComments(id);
         return bookDetailsDto == null ? "Book with id %d not found".formatted(id)
                 : bookConverter.bookWithCommentsToString(bookDetailsDto);
 

@@ -17,6 +17,6 @@ public interface BookService {
 
     void deleteById(long id);
 
-    BookDetailsDto findBookWithComments(long id);
+    BookDetailsDto findBookByIdWithComments(long id);
 
 }

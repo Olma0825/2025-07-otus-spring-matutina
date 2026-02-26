@@ -36,7 +36,7 @@ public class BookServiceImpl implements BookService {
 
     @Override
     @Transactional(readOnly = true)
-    public BookDetailsDto findBookWithComments(long id) {
+    public BookDetailsDto findBookByIdWithComments(long id) {
         Book book = bookRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Book with id=%d not found".formatted(id)));
         List<Comment> comments = commentRepository.findByBookId(id);
@@ -44,8 +44,7 @@ public class BookServiceImpl implements BookService {
     }
 
     @Override
-    @Transactional(readOnly = true) //нельзя убирать, т.к. LazyInitializationException
-    // при AuthorDto toDto(Author author)
+    @Transactional(readOnly = true)
     public List<BookDto> findAll() {
         return bookRepository.findAll()
                 .stream()
