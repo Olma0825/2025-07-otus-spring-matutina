@@ -40,7 +40,7 @@ public class BookServiceIntegrationTest {
     @Sql(scripts = "/data.sql")
     @DisplayName("Должен загружать книгу с автором, жанром и комментариями без LazyInitializationException")
     void shouldReturnBookWithComments() {
-        BookDetailsDto actualBookDto = bookService.findBookWithComments(100L);
+        BookDetailsDto actualBookDto = bookService.findBookByIdWithComments(100L);
 
         assertThat(actualBookDto.title()).isEqualTo("BookTitle_1");
         assertThat(actualBookDto.author().fullName()).isEqualTo("Author_1");
