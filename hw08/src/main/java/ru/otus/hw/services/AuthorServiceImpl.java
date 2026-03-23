@@ -27,9 +27,9 @@ public class AuthorServiceImpl implements AuthorService {
 
     @Override
     public AuthorDto findById(String id) {
-        Author authorDto = authorRepository.findById(id)
+        Author author = authorRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Author with id=%s not found".formatted(id)));
-        return AuthorDto.toDto(authorDto);
+        return AuthorDto.toDto(author);
     }
 
     @Override
@@ -49,10 +49,14 @@ public class AuthorServiceImpl implements AuthorService {
 
     @Override
     public void delete(String id) {
-        List<String> bookIds = bookRepository.findIdsByAuthorId(id);
+        Author author = authorRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Author with id=%s not found".formatted(id)));
 
-        commentRepository.deleteAllByBookIds(bookIds);
-        bookRepository.deleteAllByAuthorId(id);
+        if (bookRepository.existsByAuthor(author)) {
+            throw new EntityNotFoundException("You can't delete an author from id = %s because there are books of this author."
+                    .formatted(id));
+        }
+
         authorRepository.deleteById(id);
     }
 }

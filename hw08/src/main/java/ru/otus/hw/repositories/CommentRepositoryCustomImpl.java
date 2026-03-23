@@ -24,6 +24,5 @@ public class CommentRepositoryCustomImpl implements CommentRepositoryCustom {
         Query query = new Query(Criteria.where("book.$id").in(objectIds));
 
         mongoOperations.remove(query, Comment.class);
-
     }
 }

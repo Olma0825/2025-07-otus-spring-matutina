@@ -9,13 +9,6 @@ spring:
       write-concern:
         journal: false
 
-de:
-  flapdoodle:
-    mongodb:
-      embedded:
-        version: 4.0.2
-        features:
-          sync_delay: 0
 
 mongock:
   change-logs-scan-package:

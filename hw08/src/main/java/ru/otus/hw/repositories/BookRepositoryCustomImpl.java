@@ -17,20 +17,6 @@ public class BookRepositoryCustomImpl implements BookRepositoryCustom {
     private final MongoOperations mongoOperations;
 
     @Override
-    public void deleteAllByAuthorId(String authorId) {
-        ObjectId objectId = new ObjectId(authorId);
-        Query query = new Query(Criteria.where("author.$id").is(objectId));
-        mongoOperations.remove(query, Book.class);
-    }
-
-    @Override
-    public void deleteAllByGenreId(String genreId) {
-        ObjectId objectId = new ObjectId(genreId);
-        Query query = new Query(Criteria.where("genre.$id").is(objectId));
-        mongoOperations.remove(query, Book.class);
-    }
-
-    @Override
     public List<String> findIdsByAuthorId(String authorId) {
         ObjectId objectId = new ObjectId(authorId);
         Query query = new Query(Criteria.where("author.$id").is(objectId));

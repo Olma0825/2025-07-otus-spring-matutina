@@ -4,11 +4,7 @@ spring:
       host: localhost
       #port: 0
       database: test
-de:
-  flapdoodle:
-    mongodb:
-      embedded:
-        version: 4.0.2
+
 mongock:
   enabled: false
 logging:

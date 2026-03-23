@@ -1,6 +1,7 @@
 package ru.otus.hw.services;
 
 import org.assertj.core.api.AssertionsForInterfaceTypes;
+import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -8,13 +9,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import ru.otus.hw.dto.AuthorDto;
-import ru.otus.hw.dto.BookDto;
-import ru.otus.hw.dto.GenreDto;
 import ru.otus.hw.exceptions.EntityNotFoundException;
-import ru.otus.hw.repositories.BookRepositoryCustomImpl;
-import ru.otus.hw.repositories.CommentRepositoryCustomImpl;
-import ru.otus.hw.repositories.GenreRepository;
+import ru.otus.hw.models.Author;
+import ru.otus.hw.models.Book;
+import ru.otus.hw.models.Genre;
 
 import java.util.List;
 
@@ -23,12 +24,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DataMongoTest
 @Import({
-        CommentServiceImpl.class,
-        BookServiceImpl.class,
-        GenreServiceImpl.class,
         AuthorServiceImpl.class,
-        BookRepositoryCustomImpl.class,
-        CommentRepositoryCustomImpl.class
 })
 @DisplayName("Интеграционные тесты AuthorService")
 public class AuthorServiceIntegrationTest {
@@ -36,25 +32,11 @@ public class AuthorServiceIntegrationTest {
     private AuthorService authorService;
 
     @Autowired
-    private GenreService genreService;
-
-    @Autowired
-    private CommentService commentService;
-
-    @Autowired
-    private GenreRepository genreRepository;
-
-    @Autowired
-    private BookService bookService;
-
-    @Autowired
     private MongoTemplate mongoTemplate;
-
-    private BookDto book1;
-    private BookDto book2;
 
     String author1Id;
     String author2Id;
+    String author3Id;
 
     @BeforeEach
     void setUp() {
@@ -63,20 +45,19 @@ public class AuthorServiceIntegrationTest {
         mongoTemplate.dropCollection("books");
         mongoTemplate.dropCollection("comments");
 
-        AuthorDto author1 = authorService.insert("Лев Толстой");
-        AuthorDto author2 = authorService.insert("Федор Достоевский");
+        Author author1 = mongoTemplate.insert(new Author("Лев Толстой"), "authors");
+        Author author2 = mongoTemplate.insert(new Author("Федор Достоевский"), "authors");
+        Author author3 = mongoTemplate.insert(new Author("Сергей Есенин"), "authors");
 
-        GenreDto genre = genreService.insert("историческая проза");
+        author1Id = author1.getId();
+        author2Id = author2.getId();
+        author3Id = author3.getId();
 
-        author1Id = author1.id();
-        author2Id = author2.id();
+        Genre genre = mongoTemplate.insert(new Genre("историческая проза"), "genres");
 
-        book1 = bookService.insert("Война и мир", author1Id, genre.id());
-        book2 = bookService.insert("Анна Каренина", author2Id, genre.id());
+        Book book1 = mongoTemplate.insert(new Book("Война и мир", author1, genre), "books");
+        Book book2 = mongoTemplate.insert(new Book("Анна Каренина", author1, genre), "books");
 
-        commentService.insert(book1.id(), "Комментарий 1");
-        commentService.insert(book1.id(), "Комментарий 2");
-        commentService.insert(book2.id(), "Комментарий 3");
     }
 
     @Test
@@ -94,18 +75,18 @@ public class AuthorServiceIntegrationTest {
 
         assertThat(actualAuthors)
                 .isNotNull()
-                .hasSize(2);
+                .hasSize(3);
 
         assertThat(actualAuthors)
                 .extracting(AuthorDto::fullName)
-                .containsExactlyInAnyOrder("Лев Толстой", "Федор Достоевский");
+                .containsExactlyInAnyOrder("Лев Толстой", "Федор Достоевский", "Сергей Есенин");
     }
 
     @Test
     @DisplayName("Должен создавать нового автора")
     void shouldInsertAuthor() {
         List<AuthorDto> beforeAuthors = authorService.findAll();
-        AssertionsForInterfaceTypes.assertThat(beforeAuthors).hasSize(2);
+        AssertionsForInterfaceTypes.assertThat(beforeAuthors).hasSize(3);
 
         AuthorDto newAuthor = authorService.insert("Новый автор");
 
@@ -115,9 +96,9 @@ public class AuthorServiceIntegrationTest {
 
         List<AuthorDto> afterAuthors = authorService.findAll();
 
-        assertThat(afterAuthors).hasSize(3);
+        assertThat(afterAuthors).hasSize(4);
         assertThat(afterAuthors).extracting(AuthorDto::fullName)
-                .containsExactlyInAnyOrder("Новый автор", "Лев Толстой", "Федор Достоевский");
+                .containsExactlyInAnyOrder("Новый автор", "Лев Толстой", "Федор Достоевский", "Сергей Есенин");
     }
 
     @Test
@@ -136,26 +117,48 @@ public class AuthorServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("Должен удалять автора и все связанные с ним книги и комментарии")
+    @DisplayName("Должен удалять автора без книг")
     void shouldDeleteAuthor() {
-        assertThat(bookService.findByAuthorId(author1Id)).hasSize(1);
-        assertThat(commentService.findByBookId(book1.id())).hasSize(2);
-        assertThat(commentService.findByBookId(book2.id())).hasSize(1);
-        assertThat(authorService.findById(author1Id)).isNotNull();
+        long booksCount = mongoTemplate.count(
+                new Query(Criteria.where("author.$id").is(author3Id)),
+                Book.class
+        );
+        assertThat(booksCount).isZero();
 
-        authorService.delete(author1Id);
+        AuthorDto foundAuthor = authorService.findById(author3Id);
+        assertThat(foundAuthor).isNotNull();
+        assertThat(foundAuthor.fullName()).isEqualTo("Сергей Есенин");
 
-        assertThatThrownBy(() -> authorService.findById(author1Id))
+        authorService.delete(author3Id);
+
+        assertThatThrownBy(() -> authorService.findById(author3Id))
                 .isInstanceOf(EntityNotFoundException.class)
-                .hasMessageContaining("Author with id=" + author1Id + " not found");
+                .hasMessageContaining("Author with id=" + author3Id + " not found");
 
-        assertThatThrownBy(() -> bookService.findById(book1.id()))
-                .isInstanceOf(EntityNotFoundException.class)
-                .hasMessageContaining("Book with id=" + book1.id() + " not found");
-
-        assertThat(commentService.findByBookId(book1.id())).isEmpty();
-
-        assertThat(authorService.findById(author2Id)).isNotNull();
-        assertThat(authorService.findAll()).hasSize(1);
     }
+
+    @Test
+    @DisplayName("Должен вызывать исключение при удалении автора, у которого есть книги")
+    void shouldRaiseExceptionByDeleteAuthor() {
+        ObjectId objectId = new ObjectId(author1Id);
+        long booksCount = mongoTemplate.count(
+                new Query(Criteria.where("author.$id").is(objectId)),
+                Book.class
+        );
+        assertThat(booksCount).isGreaterThan(0);
+        assertThat(booksCount).isEqualTo(2);
+
+        AuthorDto foundAuthor = authorService.findById(author1Id);
+
+        assertThat(foundAuthor).isNotNull();
+        assertThat(foundAuthor.fullName()).isEqualTo("Лев Толстой");
+
+        assertThatThrownBy(() -> authorService.delete(author1Id))
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessageContaining("You can't delete an author from id = " + author1Id
+                        + " because there are books of this author.");
+
+        assertThat(authorService.findById(author1Id)).isNotNull();
+    }
+
 }

@@ -9,6 +9,10 @@ public interface BookService {
 
     BookDto findById(String id);
 
+    List<String> findByGenreId(String id);
+
+    List<String> findByAuthorId(String id);
+
     List<BookDto> findAll();
 
     BookDto insert(String title, String authorId, String genreId);
@@ -18,9 +22,5 @@ public interface BookService {
     void deleteById(String id);
 
     BookDetailsDto findBookByIdWithComments(String id);
-
-    List<String> findByGenreId(String id);
-
-    List<String> findByAuthorId(String id);
 
 }

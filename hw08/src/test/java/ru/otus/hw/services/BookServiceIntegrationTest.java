@@ -1,5 +1,6 @@
 package ru.otus.hw.services;
 
+import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -7,10 +8,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import ru.otus.hw.dto.*;
 import ru.otus.hw.exceptions.EntityNotFoundException;
-import ru.otus.hw.repositories.BookRepositoryCustomImpl;
-import ru.otus.hw.repositories.CommentRepositoryCustomImpl;
+import ru.otus.hw.models.Author;
+import ru.otus.hw.models.Book;
+import ru.otus.hw.models.Comment;
+import ru.otus.hw.models.Genre;
 
 import java.util.List;
 
@@ -19,36 +24,22 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DataMongoTest
 @Import({
-        CommentServiceImpl.class,
         BookServiceImpl.class,
-        GenreServiceImpl.class,
-        AuthorServiceImpl.class,
-        BookRepositoryCustomImpl.class,
-        CommentRepositoryCustomImpl.class
 })
 @DisplayName("Интеграционные тесты BookService")
 public class BookServiceIntegrationTest {
 
     @Autowired
-    private CommentService commentService;
-
-    @Autowired
     private BookService bookService;
-
-    @Autowired
-    private GenreService genreService;
-
-    @Autowired
-    private AuthorService authorService;
 
     @Autowired
     private MongoTemplate mongoTemplate;
 
-    private AuthorDto author;
-    private GenreDto genre;
-    private AuthorDto author2;
-    private GenreDto genre2;
+    private Author author2;
+    private Genre genre2;
     private String bookId;
+    private String authorId;
+    private String genreId;
 
     @BeforeEach
     void setUp() {
@@ -57,14 +48,16 @@ public class BookServiceIntegrationTest {
         mongoTemplate.dropCollection("books");
         mongoTemplate.dropCollection("comments");
 
-        author = authorService.insert("Лев Толстой");
-        genre = genreService.insert("классическая проза");
-        author2 = authorService.insert("Федор Достоевский");
-        genre2 = genreService.insert("историческая проза");
-        BookDto book = bookService.insert("Война и мир", author.id(), genre.id());
-        bookId = book.id();
-        CommentDto comment1 = commentService.insert(book.id(), "Тестовый комментарий 1");
-        CommentDto comment2 = commentService.insert(book.id(), "Тестовый комментарий 2");
+        Author author = mongoTemplate.insert(new Author("Лев Толстой"), "authors");
+        Genre genre = mongoTemplate.insert(new Genre("классическая проза"), "genres");
+        authorId = author.getId();
+        genreId = genre.getId();
+        author2 = mongoTemplate.insert(new Author("Федор Достоевский"), "authors");
+        genre2 = mongoTemplate.insert(new Genre("историческая проза"), "genres");
+        Book book = mongoTemplate.insert(new Book("Война и мир", author, genre), "books");
+        bookId = book.getId();
+        Comment comment1 = mongoTemplate.insert(new Comment("Тестовый комментарий 1", book), "comments");
+        Comment comment2 = mongoTemplate.insert(new Comment("Тестовый комментарий 2", book), "comments");
     }
 
 
@@ -109,21 +102,21 @@ public class BookServiceIntegrationTest {
     @Test
     @DisplayName("Должен добавлять книгу")
     void shouldInsertBook() {
-        BookDto actualBookDto = bookService.insert("New Book", author.id(),genre.id());
+        BookDto actualBookDto = bookService.insert("New Book", authorId, genreId);
 
         assertThat(actualBookDto.title()).isEqualTo("New Book");
 
         assertThat(actualBookDto.author())
                 .isNotNull()
                 .satisfies(actualAuthor -> {
-                    assertThat(actualAuthor.id()).isEqualTo(author.id());
+                    assertThat(actualAuthor.id()).isEqualTo(authorId);
                     assertThat(actualAuthor.fullName()).isEqualTo("Лев Толстой");
                 });
 
         assertThat(actualBookDto.genre())
                 .isNotNull()
                 .satisfies(actualGenre -> {
-                    assertThat(actualGenre.id()).isEqualTo(genre.id());
+                    assertThat(actualGenre.id()).isEqualTo(genreId);
                     assertThat(actualGenre.name()).isEqualTo("классическая проза");
                 });
     }
@@ -131,7 +124,7 @@ public class BookServiceIntegrationTest {
     @Test
     @DisplayName("Должен изменять книгу")
     void shouldUpdateBook() {
-        BookDto actualBookDto = bookService.update(bookId, "Updated Title", author2.id(), genre2.id());
+        BookDto actualBookDto = bookService.update(bookId, "Updated Title", author2.getId(), genre2.getId());
 
         assertThat(actualBookDto.id()).isEqualTo(bookId);
         assertThat(actualBookDto.title()).isEqualTo("Updated Title");
@@ -139,14 +132,14 @@ public class BookServiceIntegrationTest {
         assertThat(actualBookDto.author())
                 .isNotNull()
                 .satisfies(actualAuthor -> {
-                    assertThat(actualAuthor.id()).isEqualTo(author2.id());
+                    assertThat(actualAuthor.id()).isEqualTo(author2.getId());
                     assertThat(actualAuthor.fullName()).isEqualTo("Федор Достоевский");
                 });
 
         assertThat(actualBookDto.genre())
                 .isNotNull()
                 .satisfies(actualGenre -> {
-                    assertThat(actualGenre.id()).isEqualTo(genre2.id());
+                    assertThat(actualGenre.id()).isEqualTo(genre2.getId());
                     assertThat(actualGenre.name()).isEqualTo("историческая проза");
                 });
     }
@@ -163,7 +156,11 @@ public class BookServiceIntegrationTest {
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessageContaining("Book with id=" + bookId + " not found");
 
-        List<CommentDto> commentDtos = commentService.findByBookId(bookId);
+        //List<CommentDto> commentDtos = commentService.findByBookId(bookId);
+        ObjectId objectId = new ObjectId(bookId);
+        Query query = new Query(Criteria.where("book.$id").is(objectId));
+        List<Comment> commentDtos = mongoTemplate.find(query, Comment.class);
+
         assertThat(commentDtos).isEmpty();
 
     }

@@ -51,10 +51,14 @@ public class GenreServiceImpl implements GenreService {
 
     @Override
     public void delete(String id) {
-        List<String> bookIds = bookRepository.findIdsByGenreId(id);
+        Genre genre = genreRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Genre with id=%s not found".formatted(id)));
 
-        commentRepository.deleteAllByBookIds(bookIds);
-        bookRepository.deleteAllByGenreId(id);
+        if (bookRepository.existsByGenre(genre)) {
+            throw new EntityNotFoundException("You can't delete a genre from id = %s because there are books of this genre."
+                    .formatted(id));
+        }
+
         genreRepository.deleteById(id);
     }
 

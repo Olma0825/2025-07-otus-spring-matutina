@@ -1,5 +1,6 @@
 package ru.otus.hw.services;
 
+import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -7,12 +8,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import ru.otus.hw.dto.AuthorDto;
-import ru.otus.hw.dto.BookDto;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import ru.otus.hw.dto.GenreDto;
 import ru.otus.hw.exceptions.EntityNotFoundException;
-import ru.otus.hw.repositories.BookRepositoryCustomImpl;
-import ru.otus.hw.repositories.CommentRepositoryCustomImpl;
+import ru.otus.hw.models.Author;
+import ru.otus.hw.models.Book;
+import ru.otus.hw.models.Genre;
 
 import java.util.List;
 
@@ -21,12 +23,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DataMongoTest
 @Import({
-        CommentServiceImpl.class,
-        BookServiceImpl.class,
         GenreServiceImpl.class,
-        AuthorServiceImpl.class,
-        BookRepositoryCustomImpl.class,
-        CommentRepositoryCustomImpl.class
 })
 @DisplayName("Интеграционные тесты GenreService")
 public class GenreServiceIntegrationTest {
@@ -35,24 +32,11 @@ public class GenreServiceIntegrationTest {
     private GenreService genreService;
 
     @Autowired
-    private BookService bookService;
-
-    @Autowired
-    private AuthorService authorService;
-
-    @Autowired
-    private CommentService commentService;
-
-    @Autowired
     private MongoTemplate mongoTemplate;
-
-    private GenreDto genre1;
-    private GenreDto genre2;
-    private BookDto book1;
-    private BookDto book2;
 
     String genre1Id;
     String genre2Id;
+    String genre3Id;
 
     @BeforeEach
     void setUp() {
@@ -61,20 +45,18 @@ public class GenreServiceIntegrationTest {
         mongoTemplate.dropCollection("books");
         mongoTemplate.dropCollection("comments");
 
-        genre1 = genreService.insert("классическая проза");
-        genre2 = genreService.insert("историческая проза");
+        Genre genre1 = mongoTemplate.insert(new Genre("классическая проза"), "genres");
+        Genre genre2 = mongoTemplate.insert(new Genre("историческая проза"), "genres");
+        Genre genre3 = mongoTemplate.insert(new Genre("поэма"), "genres");
+        genre1Id = genre1.getId();
+        genre2Id = genre2.getId();
+        genre3Id = genre3.getId();
 
-        AuthorDto author = authorService.insert("Лев Толстой");
+        Author author = mongoTemplate.insert(new Author("Лев Толстой"), "authors");
 
-        genre1Id = genre1.id();
-        genre2Id = genre2.id();
+        Book book1 = mongoTemplate.insert(new Book("Война и мир", author, genre1), "books");
+        Book book2 = mongoTemplate.insert(new Book("Анна Каренина", author, genre1), "books");
 
-        book1 = bookService.insert("Война и мир", author.id(), genre1.id());
-        book2 = bookService.insert("Анна Каренина", author.id(), genre1.id());
-
-        commentService.insert(book1.id(), "Комментарий 1");
-        commentService.insert(book1.id(), "Комментарий 2");
-        commentService.insert(book2.id(), "Комментарий 3");
     }
 
     @Test
@@ -92,18 +74,18 @@ public class GenreServiceIntegrationTest {
 
         assertThat(actualGenre)
                 .isNotNull()
-                .hasSize(2);
+                .hasSize(3);
 
         assertThat(actualGenre)
                 .extracting(GenreDto::name)
-                .containsExactlyInAnyOrder("классическая проза", "историческая проза");
+                .containsExactlyInAnyOrder("классическая проза", "историческая проза", "поэма");
     }
 
     @Test
     @DisplayName("Должен создавать новый жанр")
     void shouldInsertGenre() {
         List<GenreDto> beforeGenres = genreService.findAll();
-        assertThat(beforeGenres).hasSize(2);
+        assertThat(beforeGenres).hasSize(3);
 
         GenreDto newGenre = genreService.insert("Новый жанр");
 
@@ -113,9 +95,9 @@ public class GenreServiceIntegrationTest {
 
         List<GenreDto> afterGenres = genreService.findAll();
 
-        assertThat(afterGenres).hasSize(3);
+        assertThat(afterGenres).hasSize(4);
         assertThat(afterGenres).extracting(GenreDto::name)
-                .containsExactlyInAnyOrder("Новый жанр", "классическая проза", "историческая проза");
+                .containsExactlyInAnyOrder("Новый жанр", "классическая проза", "историческая проза", "поэма");
     }
 
     @Test
@@ -123,42 +105,59 @@ public class GenreServiceIntegrationTest {
     void shouldUpdateGenre() {
         String updatedName = "обновленная классика";
 
-        GenreDto updatedGenre = genreService.update(genre1.id(), updatedName);
+        GenreDto updatedGenre = genreService.update(genre1Id, updatedName);
 
         assertThat(updatedGenre).isNotNull();
-        assertThat(updatedGenre.id()).isEqualTo(genre1.id());
+        assertThat(updatedGenre.id()).isEqualTo(genre1Id);
         assertThat(updatedGenre.name()).isEqualTo(updatedName);
 
-        GenreDto foundGenre = genreService.findById(genre1.id());
+        GenreDto foundGenre = genreService.findById(genre1Id);
         assertThat(foundGenre.name()).isEqualTo(updatedName);
     }
 
     @Test
-    @DisplayName("Должен удалять жанр и все связанные с ним книги и комментарии")
+    @DisplayName("Должен удалять жанр без книг")
     void shouldDeleteGenre() {
-        assertThat(bookService.findByGenreId(genre1.id())).hasSize(2);
-        assertThat(commentService.findByBookId(book1.id())).hasSize(2);
-        assertThat(commentService.findByBookId(book2.id())).hasSize(1);
-        assertThat(genreService.findById(genre1.id())).isNotNull();
+        long booksCount = mongoTemplate.count(
+                new Query(Criteria.where("genre.$id").is(genre3Id)),
+                Book.class
+        );
+        assertThat(booksCount).isZero();
 
-        genreService.delete(genre1.id());
+        GenreDto foundGenre = genreService.findById(genre3Id);
+        assertThat(foundGenre).isNotNull();
+        assertThat(foundGenre.name()).isEqualTo("поэма");
 
-        assertThatThrownBy(() -> genreService.findById(genre1.id()))
+        genreService.delete(genre3Id);
+
+        assertThatThrownBy(() -> genreService.findById(genre3Id))
                 .isInstanceOf(EntityNotFoundException.class)
-                .hasMessageContaining("Genre with id=" + genre1.id() + " not found");
+                .hasMessageContaining("Genre with id=" + genre3Id + " not found");
 
-        assertThatThrownBy(() -> bookService.findById(book1.id()))
-                .isInstanceOf(EntityNotFoundException.class)
-                .hasMessageContaining("Book with id=" + book1.id() + " not found");
-
-        assertThatThrownBy(() -> bookService.findById(book2.id()))
-                .isInstanceOf(EntityNotFoundException.class)
-                .hasMessageContaining("Book with id=" + book2.id() + " not found");
-
-        assertThat(commentService.findByBookId(book1.id())).isEmpty();
-        assertThat(commentService.findByBookId(book2.id())).isEmpty();
-
-        assertThat(genreService.findById(genre2.id())).isNotNull();
-        assertThat(genreService.findAll()).hasSize(1);
     }
+
+    @Test
+    @DisplayName("Должен вызывать исключение при удалении жанра, у которого есть книги")
+    void shouldRaiseExceptionByDeleteGenre() {
+        ObjectId objectId = new ObjectId(genre1Id);
+        long booksCount = mongoTemplate.count(
+                new Query(Criteria.where("genre.$id").is(objectId)),
+                Book.class
+        );
+        assertThat(booksCount).isGreaterThan(0);
+        assertThat(booksCount).isEqualTo(2);
+
+        GenreDto foundGenre = genreService.findById(genre1Id);
+
+        assertThat(foundGenre).isNotNull();
+        assertThat(foundGenre.name()).isEqualTo("классическая проза");
+
+        assertThatThrownBy(() -> genreService.delete(genre1Id))
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessageContaining("You can't delete a genre from id = " + genre1Id
+                        + " because there are books of this genre.");
+
+        assertThat(genreService.findById(genre1Id)).isNotNull();
+    }
+
 }
