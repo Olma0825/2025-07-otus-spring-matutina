@@ -55,7 +55,8 @@ public class GenreServiceImpl implements GenreService {
                 .orElseThrow(() -> new EntityNotFoundException("Genre with id=%s not found".formatted(id)));
 
         if (bookRepository.existsByGenre(genre)) {
-            throw new EntityNotFoundException("You can't delete a genre from id = %s because there are books of this genre."
+            throw new EntityNotFoundException(("You can't delete a genre from id = %s because there are books " +
+                    "of this genre.")
                     .formatted(id));
         }
 
