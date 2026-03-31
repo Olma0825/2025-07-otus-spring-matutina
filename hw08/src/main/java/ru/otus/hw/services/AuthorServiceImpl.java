@@ -49,10 +49,8 @@ public class AuthorServiceImpl implements AuthorService {
 
     @Override
     public void delete(String id) {
-        Author author = authorRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Author with id=%s not found".formatted(id)));
 
-        if (bookRepository.existsByAuthor(author)) {
+        if (bookRepository.existsByAuthorId(id)) {
             throw new EntityNotFoundException(("You can't delete an author from id = %s because there are books " +
                     "of this author.")
                     .formatted(id));

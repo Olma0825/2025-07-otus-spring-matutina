@@ -14,7 +14,6 @@ import ru.otus.hw.repositories.BookRepository;
 import ru.otus.hw.repositories.CommentRepository;
 import ru.otus.hw.repositories.GenreRepository;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,16 +43,6 @@ public class BookServiceImpl implements BookService {
                 .orElseThrow(() -> new EntityNotFoundException("Book with id=%s not found".formatted(id)));
         List<Comment> comments = commentRepository.findByBookId(id);
         return BookDetailsDto.toDto(book, comments);
-    }
-
-    @Override
-    public List<String> findByGenreId(String id) {
-        return bookRepository.findIdsByGenreId(id).stream().toList();
-    }
-
-    @Override
-    public List<String> findByAuthorId(String id) {
-        return bookRepository.findIdsByAuthorId(id).stream().toList();
     }
 
     @Override
@@ -93,7 +82,7 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public void deleteById(String id) {
-        commentRepository.deleteAllByBookIds(Collections.singletonList(id));
+        commentRepository.deleteAllByBookId(id);
         bookRepository.deleteById(id);
     }
 

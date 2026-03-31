@@ -34,9 +34,8 @@ public class GenreServiceIntegrationTest {
     @Autowired
     private MongoTemplate mongoTemplate;
 
-    String genre1Id;
-    String genre2Id;
-    String genre3Id;
+    private String genre1Id;
+    private String genre3Id;
 
     @BeforeEach
     void setUp() {
@@ -49,7 +48,7 @@ public class GenreServiceIntegrationTest {
         Genre genre2 = mongoTemplate.insert(new Genre("историческая проза"), "genres");
         Genre genre3 = mongoTemplate.insert(new Genre("поэма"), "genres");
         genre1Id = genre1.getId();
-        genre2Id = genre2.getId();
+        String genre2Id = genre2.getId();
         genre3Id = genre3.getId();
 
         Author author = mongoTemplate.insert(new Author("Лев Толстой"), "authors");

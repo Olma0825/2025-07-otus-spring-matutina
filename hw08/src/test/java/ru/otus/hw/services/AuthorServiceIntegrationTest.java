@@ -34,9 +34,8 @@ public class AuthorServiceIntegrationTest {
     @Autowired
     private MongoTemplate mongoTemplate;
 
-    String author1Id;
-    String author2Id;
-    String author3Id;
+    private String author1Id;
+    private String author3Id;
 
     @BeforeEach
     void setUp() {
@@ -50,7 +49,7 @@ public class AuthorServiceIntegrationTest {
         Author author3 = mongoTemplate.insert(new Author("Сергей Есенин"), "authors");
 
         author1Id = author1.getId();
-        author2Id = author2.getId();
+        String author2Id = author2.getId();
         author3Id = author3.getId();
 
         Genre genre = mongoTemplate.insert(new Genre("историческая проза"), "genres");
