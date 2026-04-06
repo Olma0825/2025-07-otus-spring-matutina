@@ -3,8 +3,6 @@ package ru.otus.hw.changelogs;
 import com.github.cloudyrock.mongock.ChangeLog;
 import com.github.cloudyrock.mongock.ChangeSet;
 import com.github.cloudyrock.mongock.driver.mongodb.springdata.v3.decorator.impl.MongockTemplate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import ru.otus.hw.models.Author;
 import ru.otus.hw.models.Book;
 import ru.otus.hw.models.Comment;
@@ -16,26 +14,23 @@ import ru.otus.hw.repositories.GenreRepository;
 @ChangeLog
 public class InitCollectionsChangeUnit {
 
-    private static final Logger LOG = LoggerFactory.getLogger(InitCollectionsChangeUnit.class);
+    private String author1Id;
 
-    private static String author1Id;
+    private String author2Id;
 
-    private static String author2Id;
+    private String author3Id;
 
-    private static String author3Id;
+    private String genre1Id;
 
-    private static String genre1Id;
+    private String genre2Id;
 
-    private static String genre2Id;
+    private String genre3Id;
 
-    private static String genre3Id;
+    private String book1Id;
 
-    private static String book1Id;
-
-    private static String book2Id;
+    private String book2Id;
 
     public InitCollectionsChangeUnit() {
-        LOG.info(">>> Конструктор InitCollectionsChangeUnit вызван");
     }
 
     @ChangeSet(order = "001", id = "createCollections", author = "developer", runAlways = true)
@@ -124,15 +119,12 @@ public class InitCollectionsChangeUnit {
             AuthorRepository authorRepository,
             GenreRepository genreRepository) {
 
-        LOG.info(">>> ШАГ 4.3: Добавление второй книги");
-
         Author author1 = authorRepository.findById(author1Id).orElseThrow();
         Genre genre2 = genreRepository.findById(genre2Id).orElseThrow();
 
         Book book2 = bookRepository.save(new Book("Война и мир", author1, genre2));
         book2Id = book2.getId();
 
-        LOG.info(">>> Сохранена книга с ID: {}", book2Id);
     }
 
     @ChangeSet(order = "007", id = "addThirdBook", author = "developer", runAlways = true)
