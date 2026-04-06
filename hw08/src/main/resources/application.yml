@@ -1,0 +1,27 @@
+spring:
+  main:
+    allow-bean-definition-overriding: true
+
+  data:
+    mongodb:
+      #port: 0
+      database: company
+      write-concern:
+        journal: false
+
+
+mongock:
+  change-logs-scan-package:
+    - ru.otus.hw.changelogs
+  enabled: true
+  transaction-enabled: false
+  runner-type: InitializingBean
+  mongo-db:
+    write-concern:
+      journal: false
+    read-concern: local
+
+logging:
+  level:
+    io.mongock: TRACE
+    de.flapdoodle: DEBUG
