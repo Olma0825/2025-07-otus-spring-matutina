@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <title>Онлайн библиотека</title>
+</head>
+<body>
+
+<div th:replace="~{fragments :: navbar(activePage='books')}"></div>
+
+<div class="container">
+
+    <div class="toolbar">
+        <a th:href="@{/book/create}" class="btn-add">➕ Добавить книгу</a>
+    </div>
+
+    <h1>Список книг</h1>
+    <table class="books-table">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Название</th>
+            <th>Автор</th>
+            <th>Жанр</th>
+
+        </tr>
+        </thead>
+
+        <tbody>
+
+        <tr th:each="book : ${books}">
+            <td th:text="${book.id}">1</td>
+            <td>
+                <a th:href="@{/book/{id}(id=${book.id})}" th:text="${book.title}">Война и мир</a>
+            </td>
+            <td th:text="${book.author.fullName}">Лев Толстой</td>
+            <td th:text="${book.genre.name}">1869</td>
+        </tr>
+
+    </tbody>
+</table>
+
+</div>
+</body>
+</html>

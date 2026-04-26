@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <title>Онлайн библиотека</title>
+</head>
+<body>
+
+<div th:replace="~{fragments :: navbar(activePage='authors')}"></div>
+
+<h1>Авторы</h1>
+<table class="books-table">
+    <thead>
+    <tr>
+        <th>№</th>
+        <th>Имя</th>
+    </tr>
+    </thead>
+
+    <tbody>
+
+    <tr th:each="author : ${authors}">
+        <td th:text="${author.id}">1</td>
+        <td th:text="${author.fullName}">Лев Толстой</td>
+    </tr>
+
+    </tbody>
+</table>
+
+</body>
+</html>
