@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <title>Информация о книге</title>
+</head>
+<body>
+<div class="container">
+    <div class="book-header">
+        <h1>Информация о книге</h1>
+    </div>
+
+    <div class="book-content">
+        <div th:if="${param.success}" class="alert alert-success">
+            Операция выполнена успешно!
+        </div>
+        <div th:if="${param.error}" class="alert alert-error">
+            Произошла ошибка при выполнении операции!
+        </div>
+
+        <div class="info-section">
+            <div class="info-row">
+                <span class="info-label">ID:</span>
+                <span class="info-value" th:text="${book.id}">1</span>
+            </div>
+
+            <div class="info-row">
+                <span class="info-label">Название:</span>
+                <span class="info-value" th:text="${book.title}">Война и мир</span>
+            </div>
+
+            <div class="info-row">
+                <span class="info-label">Автор:</span>
+                <span class="info-value" th:text="${book.author.fullName}">Лев Толстой</span>
+            </div>
+
+            <div class="info-row">
+                <span class="info-label">Жанр:</span>
+                <span class="info-value" th:text="${book.genre.name}">Роман</span>
+            </div>
+        </div>
+
+        <div class="comments-section">
+            <h3>Комментарии (<span th:text="${#lists.size(book.commentDtos)}">0</span>)</h3>
+
+            <div th:if="${#lists.isEmpty(book.commentDtos)}" class="empty-comments">
+                Пока нет комментариев. Будьте первым, кто оставит комментарий!
+            </div>
+
+            <div th:each="comment : ${book.commentDtos}">
+                <div class="comment">
+                    <p class="comment-text" th:text="${comment.body}">Отличная книга!</p>
+                    <div class="comment-meta">
+                        <span th:if="${comment.createdAt != null}" th:text="${#temporals.format(comment.createdAt, 'dd.MM.yyyy HH:mm')}">
+                            01.01.2024 12:00
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <br/>
+        <div class="actions">
+            <a th:href="@{/book/edit/{id}(id=${book.id})}" class="btn btn-edit">Редактировать</a>
+            <form th:action="@{/book/delete/{id}(id=${book.id})}" method="post" style="display: inline;">
+                <input type="hidden" name="id" th:value="${book.id}">
+                <input type="hidden" name="_method" value="DELETE" />
+                <button type="submit" class="btn btn-delete"
+                        th:data-title="${book.title}"
+                        onclick="return confirm('Вы уверены, что хотите удалить книгу «' + this.dataset.title + '»?')">
+                    Удалить
+                </button>
+            </form>
+            <a th:href="@{/}" class="btn btn-back">← Назад к списку</a>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
