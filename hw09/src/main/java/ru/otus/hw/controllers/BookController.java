@@ -53,11 +53,7 @@ public class BookController {
 
     @PostMapping("/book/save")
     public String createBook(@ModelAttribute BookFormDto book) {
-        if (book.getId() == 0) {
-            bookService.insert(book.getTitle(), book.getAuthorId(), book.getGenreId());
-        } else {
-            bookService.update(book.getId(), book.getTitle(), book.getAuthorId(), book.getGenreId());
-        }
+        bookService.save(book);
         return "redirect:/?success";
     }
 

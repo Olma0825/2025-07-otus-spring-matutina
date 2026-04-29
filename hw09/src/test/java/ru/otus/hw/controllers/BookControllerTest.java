@@ -125,7 +125,9 @@ public class BookControllerTest {
     @Test
     @DisplayName("должен обновить существующую книгу")
     void shouldUpdateExistingBook() throws Exception {
-        when(bookService.update(eq(bookId), anyString(), anyLong(), anyLong())).thenReturn(testBooks.get(0));
+        BookDto expectedBook = new BookDto(100L, "Обновлённое название", testAuthors.get(1), testGenres.get(2));
+
+        when(bookService.save(any(BookFormDto.class))).thenReturn(expectedBook);
 
         mockMvc.perform(post("/book/save")
                         .param("id", "100")
@@ -136,8 +138,7 @@ public class BookControllerTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/?success"));
 
-        verify(bookService, times(1)).update(100L, "Обновлённое название", 2L, 3L);
-        verify(bookService, never()).insert(anyString(), anyLong(), anyLong());
+        verify(bookService, times(1)).save(any(BookFormDto.class));
     }
 
     @Test
