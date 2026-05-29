@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Прогресс - TutorTrack</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .student-selector {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .student-selector label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .student-selector select {
+            padding: 8px;
+            width: 300px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .student-info {
+            background: #e9ecef;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .student-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+        .student-name span {
+            color: #667eea;
+        }
+        .subject-info {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .subject-info h3 {
+            margin: 0;
+            color: white;
+        }
+        .stats-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .average-score {
+            font-size: 48px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .average-label {
+            color: #666;
+            margin-top: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #f8f9fa;
+            color: #333;
+        }
+        .mastery-badge {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+            text-align: center;
+            border-radius: 50%;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            margin: 2px;
+        }
+        .mastery-1 { background: #dc3545; }
+        .mastery-2 { background: #fd7e14; }
+        .mastery-3 { background: #ffc107; color: #333; }
+        .mastery-4 { background: #28a745; }
+        .mastery-5 { background: #20c997; }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <div class="logo">📚 TutorTrack</div>
+    <div class="nav">
+        <a href="/students" id="students-link">Студенты</a>
+        <a href="/subjects" id="subjects-link">Предметы</a>
+        <a href="/ratings" class="active">Прогресс</a>
+        <a href="/link-students" id="link-students-link">Связывание</a>
+    </div>
+    <div class="user-info">
+        <span id="user-role"></span>
+        <button class="logout-btn" onclick="logout()">Выйти</button>
+    </div>
+</div>
+
+<div class="container">
+    <h2>📊 Успеваемость</h2>
+
+    <div id="error-message" class="error"></div>
+
+    <div id="teacher-view" style="display: none;">
+        <div class="student-selector">
+            <label for="student-select">Выберите ученика:</label>
+            <select id="student-select" onchange="loadProgressForTeacher()">
+                <option value="">-- Выберите ученика --</option>
+            </select>
+        </div>
+    </div>
+
+    <div id="student-info-block" class="student-info" style="display: none;">
+        <div class="student-name">
+            👨‍🎓 Ученик: <span id="current-student-name"></span>
+        </div>
+        <div id="student-status"></div>
+    </div>
+
+    <div id="progress-container" style="display: none;">
+        <div class="subject-info">
+            <h3>📚 Предмет: <span id="subject-name"></span></h3>
+        </div>
+        <div class="stats-card">
+            <div class="average-score" id="average-score">0</div>
+            <div class="average-label">Средний балл по предмету</div>
+        </div>
+        <h3>📖 Успеваемость по темам</h3>
+        <div id="topics-container">Загрузка...</div>
+    </div>
+
+    <div id="no-data-message" class="info-message" style="display: none; text-align: center; padding: 40px;">
+        Выберите ученика для просмотра успеваемости
+    </div>
+</div>
+
+<script>
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+
+    if (!token) {
+        window.location.href = '/';
+    }
+
+    if (role !== 'TEACHER') {
+        document.getElementById('students-link').style.display = 'none';
+        document.getElementById('subjects-link').style.display = 'none';
+        document.getElementById('link-students-link').style.display = 'none';
+    }
+
+    document.getElementById('user-role').textContent = role === 'TEACHER' ? '👨‍🏫 Учитель' : '👩‍🎓 Ученик';
+
+    if (role === 'TEACHER') {
+        document.getElementById('teacher-view').style.display = 'block';
+        loadStudentsForTeacher();
+    } else {
+        loadMyProgress();
+    }
+
+    async function loadStudentsForTeacher() {
+        try {
+            const response = await fetch('http://localhost:8080/api/student', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+
+            if (!response.ok) throw new Error('Ошибка загрузки студентов');
+
+            const students = await response.json();
+            const select = document.getElementById('student-select');
+
+            if (!students || students.length === 0) {
+                select.innerHTML = '<option value="">-- Нет учеников --</option>';
+                document.getElementById('no-data-message').style.display = 'block';
+                document.getElementById('no-data-message').innerHTML = 'Нет учеников. Сначала добавьте учеников через страницу "Студенты".';
+                return;
+            }
+
+            select.innerHTML = '<option value="">-- Выберите ученика --</option>' +
+                students.map(s => `<option value="${s.id}">${s.firstName} ${s.lastName} (${s.subjectName || 'нет предмета'})</option>`).join('');
+
+            document.getElementById('no-data-message').style.display = 'block';
+            document.getElementById('no-data-message').innerHTML = 'Выберите ученика для просмотра успеваемости';
+        } catch (err) {
+            showError('Ошибка загрузки списка учеников: ' + err.message);
+        }
+    }
+
+    async function loadProgressForTeacher() {
+        const studentId = document.getElementById('student-select').value;
+        if (!studentId) {
+            document.getElementById('progress-container').style.display = 'none';
+            document.getElementById('student-info-block').style.display = 'none';
+            document.getElementById('no-data-message').style.display = 'block';
+            return;
+        }
+
+        document.getElementById('progress-container').style.display = 'block';
+        document.getElementById('no-data-message').style.display = 'none';
+        document.getElementById('topics-container').innerHTML = '<div class="loading">Загрузка...</div>';
+
+        try {
+            const studentResponse = await fetch(`http://localhost:8080/api/student/${studentId}`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+
+            if (studentResponse.ok) {
+                const student = await studentResponse.json();
+                const studentName = `${student.firstName} ${student.lastName}`;
+                document.getElementById('current-student-name').textContent = studentName;
+                document.getElementById('student-info-block').style.display = 'flex';
+                document.getElementById('student-status').innerHTML = '';
+            }
+
+            const response = await fetch(`http://localhost:8080/api/student/${studentId}/progress`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+
+            if (!response.ok) throw new Error('Ошибка загрузки прогресса');
+
+            const data = await response.json();
+            renderProgress(data);
+        } catch (err) {
+            showError(err.message);
+            document.getElementById('topics-container').innerHTML = '<div style="color: red; text-align: center;">Ошибка загрузки данных</div>';
+        }
+    }
+
+    async function loadMyProgress() {
+        document.getElementById('progress-container').style.display = 'block';
+        document.getElementById('topics-container').innerHTML = '<div class="loading">Загрузка...</div>';
+        document.getElementById('student-info-block').style.display = 'flex';
+        document.getElementById('student-status').innerHTML = '';
+
+        try {
+            const response = await fetch('http://localhost:8080/api/student/my/progress', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+
+            if (response.status === 404) {
+                document.getElementById('topics-container').innerHTML = '<div style="text-align: center; padding: 40px; color: #999;">Ваш профиль не связан с учеником. Обратитесь к учителю.</div>';
+                document.getElementById('subject-name').textContent = '—';
+                document.getElementById('average-score').textContent = '0';
+                document.getElementById('current-student-name').textContent = 'Не определён';
+                document.getElementById('student-status').innerHTML = '<span style="color: #dc3545;">⚠️ Не связан</span>';
+                return;
+            }
+
+            if (!response.ok) throw new Error('Ошибка загрузки прогресса');
+
+            const data = await response.json();
+
+            document.getElementById('current-student-name').textContent = data.studentName || 'Ваш профиль';
+            document.getElementById('student-status').innerHTML = '<span style="color: #28a745;">✓ Ваш прогресс</span>';
+
+            renderProgress(data);
+        } catch (err) {
+            showError(err.message);
+            document.getElementById('topics-container').innerHTML = '<div style="color: red; text-align: center;">Ошибка загрузки данных</div>';
+        }
+    }
+
+    function renderProgress(data) {
+        document.getElementById('subject-name').textContent = data.subjectName || '—';
+        document.getElementById('average-score').textContent = data.averageScore ? data.averageScore.toFixed(1) : '0';
+
+        const container = document.getElementById('topics-container');
+
+        if (!data.topics || data.topics.length === 0) {
+            container.innerHTML = '<div style="text-align: center; padding: 40px; color: #999;">Нет данных по темам</div>';
+            return;
+        }
+
+        let tableHtml = `
+            <table>
+                <thead>
+                    <tr>
+                        <th>Тема</th>
+                        <th>Количество уроков</th>
+                        <th>Оценки</th>
+                        <th>Средний балл</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        for (const topic of data.topics) {
+            let gradesHtml = '';
+            if (!topic.grades || topic.grades.length === 0) {
+                gradesHtml = '<span style="color: #999;">—</span>';
+            } else {
+                gradesHtml = topic.grades.map(g => {
+                    let gradeClass = '';
+                    if (g <= 2) gradeClass = 'mastery-1';
+                    else if (g === 3) gradeClass = 'mastery-3';
+                    else if (g === 4) gradeClass = 'mastery-4';
+                    else if (g === 5) gradeClass = 'mastery-5';
+                    return `<span class="mastery-badge ${gradeClass}">${g}</span>`;
+                }).join('');
+            }
+
+            let avgColor = '#666';
+            const avg = topic.average || 0;
+            if (avg >= 4.5) avgColor = '#20c997';
+            else if (avg >= 3.5) avgColor = '#28a745';
+            else if (avg >= 2.5) avgColor = '#ffc107';
+            else if (avg > 0) avgColor = '#dc3545';
+
+            tableHtml += `
+                <tr>
+                    <td><strong>📖 ${topic.name}</strong></td>
+                    <td>${topic.lessonsCount || 0}</td>
+                    <td>${gradesHtml}</td>
+                    <td style="color: ${avgColor}; font-weight: bold;">
+                        ${avg > 0 ? avg.toFixed(1) : '—'}
+                    </td>
+                </tr>
+            `;
+        }
+
+        tableHtml += `</tbody></table>`;
+        container.innerHTML = tableHtml;
+    }
+
+    function showError(msg) {
+        const errorDiv = document.getElementById('error-message');
+        errorDiv.textContent = msg;
+        errorDiv.style.display = 'block';
+        setTimeout(() => errorDiv.style.display = 'none', 5000);
+    }
+
+    function logout() {
+        localStorage.clear();
+        window.location.href = '/';
+    }
+</script>
+</body>
+</html>

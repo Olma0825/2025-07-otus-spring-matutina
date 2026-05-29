@@ -1,0 +1,29 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: tutortrack-postgres
+    environment:
+      POSTGRES_DB: tutortrack
+      POSTGRES_USER: tutortrack_user #postgres
+      POSTGRES_PASSWORD: tutortrack_pass #postgres
+      #POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  mongodb:
+    image: mongo:6
+    container_name: tutortrack-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: adminpass
+      MONGO_INITDB_DATABASE: tutortrack
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  postgres_data:
+  mongo_data:

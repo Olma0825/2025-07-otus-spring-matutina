@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Связывание учеников и пользователей - TutorTrack</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .container {
+            max-width: 1200px;
+        }
+        .linked-badge {
+            background: #28a745;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .unlinked-badge {
+            background: #dc3545;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .user-select {
+            padding: 5px;
+            width: 200px;
+        }
+        .link-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .link-btn:hover {
+            background: #218838;
+        }
+        .info-card {
+            margin-bottom: 20px;
+        }
+        .student-row {
+            margin-bottom: 15px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .student-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .student-name {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .link-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <div class="logo">📚 TutorTrack</div>
+    <div class="nav">
+        <a href="/students">Студенты</a>
+        <a href="/subjects">Предметы</a>
+        <a href="/ratings">Прогресс</a>
+        <a href="/link-students" class="active">🔗 Связывание</a>
+    </div>
+    <div class="user-info">
+        <span id="user-role"></span>
+        <button class="logout-btn" onclick="logout()">Выйти</button>
+    </div>
+</div>
+
+<div class="container">
+    <h2>🔗 Связывание учеников с пользователями</h2>
+    <p>Здесь можно связать учеников (созданных учителем) с зарегистрированными пользователями.</p>
+
+    <div id="error-message" class="error"></div>
+    <div id="success-message" class="success" style="display: none; background: #d4edda; color: #155724; padding: 10px; border-radius: 5px; margin-bottom: 10px;"></div>
+
+    <div id="students-container">Загрузка...</div>
+</div>
+
+<script>
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+
+    if (!token) {
+        window.location.href = '/';
+    }
+
+    if (role !== 'TEACHER') {
+        window.location.href = '/ratings';
+    }
+
+    document.getElementById('user-role').textContent = '👨‍🏫 Учитель';
+
+    let usersList = [];
+
+    async function loadUsers() {
+        try {
+            const response = await fetch('http://localhost:8081/api/auth/users', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+
+            if (response.ok) {
+                usersList = await response.json();
+            } else {
+                console.warn('Не удалось загрузить пользователей');
+                usersList = [];
+            }
+        } catch (err) {
+            console.error('Ошибка загрузки пользователей:', err);
+            usersList = [];
+        }
+    }
+
+    async function loadStudents() {
+        try {
+            const response = await fetch('http://localhost:8080/api/student', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+
+            if (!response.ok) throw new Error('Ошибка загрузки студентов');
+
+            const students = await response.json();
+            renderStudents(students);
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    function renderStudents(students) {
+        const container = document.getElementById('students-container');
+
+        if (students.length === 0) {
+            container.innerHTML = '<div style="text-align: center; padding: 40px;">Нет учеников</div>';
+            return;
+        }
+
+        let html = '';
+
+        for (const student of students) {
+            const isLinked = student.userId && student.userId > 0;
+
+            html += `
+                <div class="student-row">
+                    <div class="student-header">
+                        <div class="student-name">
+                            📖 ${student.firstName} ${student.lastName}
+                        </div>
+                        <div>
+                            ${isLinked ?
+                                `<span class="linked-badge">✓ Связан с пользователем ID: ${student.userId}</span>` :
+                                '<span class="unlinked-badge">✗ Не связан</span>'
+                            }
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <div><strong>Школа:</strong> ${student.school || '—'}</div>
+                        <div><strong>Предмет:</strong> ${student.subjectName || '—'}</div>
+                    </div>
+            `;
+
+            if (!isLinked) {
+                html += `
+                    <div class="link-section">
+                        <label>Связать с пользователем:</label>
+                        <select id="user-select-${student.id}" class="user-select">
+                            <option value="">-- Выберите пользователя --</option>
+                            ${usersList.map(u => `<option value="${u.id}">${u.email} (${u.name || 'без имени'})</option>`).join('')}
+                        </select>
+                        <button class="link-btn" onclick="linkStudent(${student.id})">🔗 Связать</button>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="link-section">
+                        <span style="color: #666;">Пользователь: ${getUserEmail(student.userId)}</span>
+                        <button class="delete-btn" onclick="unlinkStudent(${student.id})" style="margin-left: 10px;">Отвязать</button>
+                    </div>
+                `;
+            }
+
+            html += `</div>`;
+        }
+
+        container.innerHTML = html;
+    }
+
+    function getUserEmail(userId) {
+        const user = usersList.find(u => u.id === userId);
+        return user ? `${user.email} (${user.name || 'без имени'})` : `ID: ${userId}`;
+    }
+
+    async function linkStudent(studentId) {
+        const select = document.getElementById(`user-select-${studentId}`);
+        const userId = select.value;
+
+        if (!userId) {
+            showError('Выберите пользователя для связывания');
+            return;
+        }
+
+        try {
+            const response = await fetch(`http://localhost:8080/api/student/${studentId}/link`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({ userId: parseInt(userId) })
+            });
+
+            if (response.ok) {
+                showSuccess('Студент успешно связан с пользователем');
+                await loadUsers();
+                await loadStudents();
+            } else {
+                const error = await response.text();
+                showError('Ошибка связывания: ' + error);
+            }
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    async function unlinkStudent(studentId) {
+        if (!confirm('Отвязать студента от пользователя?')) return;
+
+        try {
+            const response = await fetch(`http://localhost:8080/api/student/${studentId}/unlink`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+
+            if (response.ok) {
+                showSuccess('Связь удалена');
+                await loadUsers();
+                await loadStudents();
+            } else {
+                showError('Ошибка отвязывания');
+            }
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    function showError(msg) {
+        const errorDiv = document.getElementById('error-message');
+        errorDiv.textContent = msg;
+        errorDiv.style.display = 'block';
+        setTimeout(() => errorDiv.style.display = 'none', 3000);
+    }
+
+    function showSuccess(msg) {
+        const successDiv = document.getElementById('success-message');
+        successDiv.textContent = msg;
+        successDiv.style.display = 'block';
+        setTimeout(() => successDiv.style.display = 'none', 3000);
+    }
+
+    function logout() {
+        localStorage.clear();
+        window.location.href = '/';
+    }
+
+    async function init() {
+        await loadUsers();
+        await loadStudents();
+    }
+
+    init();
+</script>
+</body>
+</html>

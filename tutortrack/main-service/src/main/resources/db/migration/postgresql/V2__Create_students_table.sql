@@ -1,0 +1,8 @@
+create table student (
+    id bigserial primary key,
+    first_name varchar(255) not null,
+    last_name varchar(255) not null,
+    school varchar(255) not null,
+    subject_id bigint references subject(id) on delete set null,
+    user_id bigint
+);
