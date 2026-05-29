@@ -2,6 +2,7 @@ package com.tutortrack.main;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @SpringBootApplication
 public class MainServiceApplication {
@@ -10,6 +11,8 @@ public class MainServiceApplication {
 
 		SpringApplication.run(MainServiceApplication.class, args);
 		System.out.printf("Чтобы проверить себя открывай: %n http://localhost:8080 %n");
+		//System.out.println(new BCryptPasswordEncoder().encode("admin123"));
+		//System.out.println(new BCryptPasswordEncoder().encode("123"));
 	}
 
 }

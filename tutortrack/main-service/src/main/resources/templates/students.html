@@ -1,0 +1,231 @@
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Студенты - TutorTrack</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="header">
+    <div class="logo">📚 TutorTrack</div>
+    <div class="nav">
+        <a href="/students" class="active">Студенты</a>
+        <a href="/subjects">Предметы</a>
+        <a href="/ratings">Рейтинги</a>
+    </div>
+    <div class="user-info">
+        <span id="user-role"></span>
+        <button class="logout-btn" onclick="logout()">Выйти</button>
+    </div>
+</div>
+
+<div class="container">
+    <h2>📚 Студенты</h2>
+    <div id="error-message" class="error"></div>
+    <a href="/link-students" class="btn-link" style="background: #17a2b8; color: white; padding: 8px 15px; border-radius: 5px;
+     text-decoration: none; margin-right: 10px;">🔗 Связывание</a>
+    <button class="add-btn" onclick="showAddModal()">➕ Добавить студента</button>
+
+    <table>
+        <thead>
+        <tr><th>ID</th><th>Имя</th><th>Школа</th><th>Предмет</th><th>Действия</th></tr>
+        </thead>
+        <tbody id="students-tbody">
+        <tr><td colspan="5">Загрузка...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div id="add-modal" class="modal">
+    <div class="modal-content">
+        <h3>Новый студент</h3>
+        <input type="text" id="first-name" placeholder="Имя">
+        <input type="text" id="last-name" placeholder="Фамилия">
+        <input type="text" id="school" placeholder="Школа">
+
+        <div class="form-group">
+            <label>Предмет:</label>
+            <select id="subject-id">
+                <option value="">-- Выберите предмет --</option>
+            </select>
+        </div>
+
+        <button onclick="createStudent()">Сохранить</button>
+        <button onclick="closeModal()">Отмена</button>
+    </div>
+</div>
+
+<script>
+    let currentToken = localStorage.getItem('token');
+    let currentRole = localStorage.getItem('role');
+    let subjectsList = [];
+
+    if (!currentToken) {
+        window.location.href = '/';
+    }
+    if (currentRole !== 'TEACHER') {
+        window.location.href = '/ratings';
+    }
+
+    document.getElementById('user-role').textContent = currentRole === 'TEACHER' ? '👨‍🏫 Учитель' : '👩‍🎓 Ученик/Родитель';
+
+    async function loadSubjects() {
+        try {
+            const response = await fetch('http://localhost:8080/api/subject', {
+                headers: { 'Authorization': 'Bearer ' + currentToken }
+            });
+            if (!response.ok) throw new Error('Ошибка загрузки предметов');
+
+            subjectsList = await response.json();
+            const select = document.getElementById('subject-id');
+            select.innerHTML = '<option value="">-- Выберите предмет --</option>' +
+                subjectsList.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        } catch (err) {
+            console.error('Ошибка загрузки предметов:', err);
+        }
+    }
+
+    async function loadStudents() {
+        try {
+            const response = await fetch('http://localhost:8080/api/student', {
+                headers: { 'Authorization': 'Bearer ' + currentToken }
+            });
+
+            if (response.status === 401 || response.status === 403) {
+                localStorage.clear();
+                window.location.href = '/';
+                return;
+            }
+
+            if (!response.ok) throw new Error('Ошибка загрузки');
+
+            const students = await response.json();
+            const tbody = document.getElementById('students-tbody');
+
+            if (students.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center">Нет студентов</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = students.map(s => `
+                <tr>
+                    <td>${s.id}</td>
+                    <td>
+                        <a href="/student-details?id=${s.id}" style="color: #667eea; text-decoration: none;">
+                            ${s.firstName || ''} ${s.lastName || ''}
+                        </a>
+                    </td>
+                    <td>${s.school || ''}</td>
+                    <td>${s.subjectName || '—'}</td>
+                    <td>
+                        <button class="delete-btn" onclick="deleteStudent(${s.id})">Удалить</button>
+                    </td>
+                </tr>
+            `).join('');
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    async function createStudent() {
+        const firstName = document.getElementById('first-name').value;
+        const lastName = document.getElementById('last-name').value;
+        const school = document.getElementById('school').value;
+        const subjectId = document.getElementById('subject-id').value;
+
+        if (!firstName) {
+            showError('Введите имя студента');
+            return;
+        }
+
+        const studentData = {
+            firstName: firstName,
+            lastName: lastName,
+            school: school
+        };
+
+        if (subjectId) {
+            studentData.subjectId = parseInt(subjectId);
+        }
+
+        try {
+            const response = await fetch('http://localhost:8080/api/student', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + currentToken
+                },
+                body: JSON.stringify(studentData)
+            });
+
+            if (response.status === 401 || response.status === 403) {
+                localStorage.clear();
+                window.location.href = '/';
+                return;
+            }
+
+            if (response.ok) {
+                closeModal();
+                loadStudents();
+            } else {
+                const error = await response.text();
+                showError('Ошибка: ' + error);
+            }
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    async function deleteStudent(id) {
+        if (!confirm('Удалить студента?')) return;
+
+        try {
+            const response = await fetch(`http://localhost:8080/api/student/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + currentToken }
+            });
+
+            if (response.status === 401 || response.status === 403) {
+                localStorage.clear();
+                window.location.href = '/';
+                return;
+            }
+
+            if (response.ok) {
+                loadStudents();
+            } else {
+                showError('Ошибка удаления');
+            }
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    function showAddModal() {
+        document.getElementById('first-name').value = '';
+        document.getElementById('last-name').value = '';
+        document.getElementById('school').value = '';
+        document.getElementById('subject-id').value = '';
+        document.getElementById('add-modal').classList.add('active');
+    }
+
+    function closeModal() {
+        document.getElementById('add-modal').classList.remove('active');
+    }
+
+    function showError(msg) {
+        const errorDiv = document.getElementById('error-message');
+        errorDiv.textContent = msg;
+        errorDiv.style.display = 'block';
+        setTimeout(() => errorDiv.style.display = 'none', 3000);
+    }
+
+    function logout() {
+        localStorage.clear();
+        window.location.href = '/';
+    }
+
+    loadSubjects();
+    loadStudents();
+</script>
+</body>
+</html>

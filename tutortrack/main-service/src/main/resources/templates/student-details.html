@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Карточка ученика - TutorTrack</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="header">
+    <div class="logo">📚 TutorTrack</div>
+    <div class="nav">
+        <a href="/students">Студенты</a>
+        <a href="/subjects">Предметы</a>
+        <a href="/ratings">Рейтинги</a>
+    </div>
+    <div class="user-info">
+        <span id="user-role"></span>
+        <button class="logout-btn" onclick="logout()">Выйти</button>
+    </div>
+</div>
+
+<div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2>👨‍🎓 Информация об ученике</h2>
+        <button class="add-btn" onclick="showAddLessonModal()">➕ Добавить урок</button>
+    </div>
+
+    <div id="error-message" class="error"></div>
+
+    <div class="info-card" id="student-info">
+        <div class="info-row"><span class="info-label">ID:</span><span class="info-value" id="student-id"></span></div>
+        <div class="info-row"><span class="info-label">Имя:</span><span class="info-value" id="student-first-name"></span></div>
+        <div class="info-row"><span class="info-label">Фамилия:</span><span class="info-value" id="student-last-name"></span></div>
+        <div class="info-row"><span class="info-label">Школа:</span><span class="info-value" id="student-school"></span></div>
+        <div class="info-row"><span class="info-label">Предмет:</span><span class="info-value" id="student-subject"></span></div>
+    </div>
+
+    <h3>📅 Уроки</h3>
+    <div id="lessons-container">Загрузка уроков...</div>
+</div>
+
+<div id="lesson-modal" class="modal">
+    <div class="modal-content">
+        <h3 id="lesson-modal-title">Новый урок</h3>
+        <input type="hidden" id="lesson-id">
+
+        <div class="form-group">
+            <label>Дата и время:</label>
+            <input type="datetime-local" id="lesson-date" required>
+        </div>
+
+        <div class="form-group">
+            <label>Посещаемость:</label>
+            <select id="lesson-attendance" required>
+                <option value="">Выберите статус</option>
+                <option value="PRESENT">Присутствовал</option>
+                <option value="ABSENT">Отсутствовал</option>
+                <option value="LATE">Опоздал</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Темы урока:</label>
+            <div id="lesson-topics-container" style="margin-bottom: 10px;"></div>
+            <button type="button" class="add-topic-btn" onclick="addTopicField()">+ Добавить тему</button>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button onclick="saveLesson()" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Сохранить</button>
+            <button onclick="closeLessonModal()" style="background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Отмена</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_URL = 'http://localhost:8080/api';
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+    const urlParams = new URLSearchParams(window.location.search);
+    const studentId = urlParams.get('id');
+
+    if (role !== 'TEACHER') {
+        window.location.href = '/ratings';
+    }
+
+    let topicsList = [];
+    let studentSubjectId = null;
+    let studentSubjectName = '';
+    let currentEditLessonId = null;
+
+    function showError(msg) {
+        const errorDiv = document.getElementById('error-message');
+        errorDiv.textContent = msg;
+        errorDiv.style.display = 'block';
+        console.error('Ошибка:', msg);
+        setTimeout(() => errorDiv.style.display = 'none', 5000);
+    }
+
+    async function initPage() {
+        if (!token) {
+            window.location.href = '/';
+            return;
+        }
+        if (!studentId) {
+            showError('Ошибка: ID ученика не указан в URL.');
+            return;
+        }
+
+        document.getElementById('user-role').textContent = role === 'TEACHER' ? '👨‍🏫 Учитель' : '👩‍🎓 Ученик';
+
+        try {
+            await Promise.all([loadStudentInfo(), loadLessons()]);
+        } catch (e) {
+            console.error("Ошибка загрузки:", e);
+        }
+    }
+
+    async function loadStudentInfo() {
+        topicsList = [];
+        studentSubjectId = null;
+
+        const response = await fetch(`${API_URL}/student/${studentId}`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        if (!response.ok) {
+            showError(response.status === 404 ? 'Ученик не найден.' : 'Ошибка загрузки данных ученика.');
+            throw new Error('Student load failed');
+        }
+
+        const student = await response.json();
+
+        document.getElementById('student-id').textContent = student.id;
+        document.getElementById('student-first-name').textContent = student.firstName;
+        document.getElementById('student-last-name').textContent = student.lastName;
+        document.getElementById('student-school').textContent = student.school;
+
+        studentSubjectId = student.subjectId;
+        studentSubjectName = student.subjectName;
+        window.studentSubjectId = studentSubjectId;
+
+        document.getElementById('student-subject').textContent = student.subjectName || '—';
+
+        if (studentSubjectId) {
+            await loadTopicsForSubject();
+        }
+    }
+
+    async function loadTopicsForSubject() {
+        if (!studentSubjectId) return;
+
+        try {
+            const response = await fetch(`${API_URL}/topic/subject/${studentSubjectId}`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+
+            if (!response.ok) throw new Error('Ошибка загрузки списка тем.');
+
+            topicsList = await response.json();
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    async function loadLessons() {
+        const container = document.getElementById('lessons-container');
+
+        const response = await fetch(`${API_URL}/lesson/student/${studentId}`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        if (!response.ok) {
+            container.innerHTML = '<p style="color: red;">Ошибка загрузки списка уроков.</p>';
+            throw new Error('Lessons load failed');
+        }
+
+        const lessons = await response.json();
+
+        if (lessons.length === 0) {
+            container.innerHTML = '<p>У этого ученика пока нет уроков.</p>';
+            return;
+        }
+
+        let tableHtml = '<table class="lessons-table"><thead><tr><th>Дата</th><th>Посещаемость</th><th>Темы</th><th>Действия</th></tr></thead><tbody>';
+
+        lessons.forEach(lesson => {
+            tableHtml += `
+                <tr>
+                    <td>${new Date(lesson.lessonDate).toLocaleString()}</td>
+                    <td>${getAttendanceText(lesson.attendance)}</td>
+                    <td><span style="cursor: pointer; color: #667eea;" onclick="viewLessonTopics(${lesson.id})">📖 ${lesson.topics?.length || 0} тем</span></td>
+                    <td>
+                        <button class="edit-btn" onclick="editLesson(${lesson.id})">✏️</button>
+                        <button class="delete-btn" onclick="deleteLesson(${lesson.id})">🗑</button>
+                    </td>
+                </tr>`;
+        });
+
+        container.innerHTML = tableHtml + '</tbody></table>';
+    }
+
+    function getAttendanceText(attendance) {
+        const map = { 'PRESENT': '✅ Присутствовал', 'ABSENT': '❌ Отсутствовал', 'LATE': '⏰ Опоздал' };
+        return map[attendance] || attendance || '—';
+    }
+
+    function createTopicBlock(topicId, masteryLevel, dbRecordId) {
+        const blockDiv = document.createElement('div');
+        blockDiv.className = 'topic-item';
+
+        if (dbRecordId) {
+            blockDiv.dataset.lessonTopicDbId = dbRecordId;
+        }
+
+        const topicSelect = document.createElement('select');
+        topicSelect.className = 'topic-select';
+        topicSelect.innerHTML = '<option value="">-- Выберите тему --</option>';
+        topicsList.forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t.id;
+            opt.textContent = t.name;
+            if (t.id == topicId) opt.selected = true;
+            topicSelect.appendChild(opt);
+        });
+
+        const masterySelect = document.createElement('select');
+        masterySelect.className = 'mastery-select';
+        const levels = [
+            { value: 1, text: '1 - Плохо' },
+            { value: 2, text: '2 - Слабо' },
+            { value: 3, text: '3 - Средне' },
+            { value: 4, text: '4 - Хорошо' },
+            { value: 5, text: '5 - Отлично' }
+        ];
+        levels.forEach(level => {
+            const opt = document.createElement('option');
+            opt.value = level.value;
+            opt.textContent = level.text;
+            if (level.value == masteryLevel) opt.selected = true;
+            masterySelect.appendChild(opt);
+        });
+
+        const delBtn = document.createElement('button');
+        delBtn.textContent = '🗑️';
+        delBtn.className = 'delete-topic-btn';
+        delBtn.onclick = () => blockDiv.remove();
+
+        blockDiv.appendChild(topicSelect);
+        blockDiv.appendChild(masterySelect);
+        blockDiv.appendChild(delBtn);
+
+        return blockDiv;
+    }
+
+    function addTopicField(topicId = '', masteryLevel = '', dbRecordId = null) {
+        if (!topicsList.length) {
+            showError('Нет доступных тем для этого предмета');
+            return;
+        }
+        const container = document.getElementById('lesson-topics-container');
+        container.appendChild(createTopicBlock(topicId, masteryLevel, dbRecordId));
+    }
+
+    function getLessonTopicsData() {
+        const container = document.getElementById('lesson-topics-container');
+        return Array.from(container.children).map(block => ({
+            id: block.dataset.lessonTopicDbId ? parseInt(block.dataset.lessonTopicDbId) : null,
+            topicId: parseInt(block.querySelector('.topic-select').value),
+            masteryLevel: parseInt(block.querySelector('.mastery-select').value)
+        })).filter(t => t.topicId && t.masteryLevel);
+    }
+
+    function clearModal() {
+        const container = document.getElementById('lesson-topics-container');
+        if (container) container.innerHTML = '';
+        document.getElementById('lesson-id').value = '';
+        document.getElementById('lesson-date').value = '';
+        document.getElementById('lesson-attendance').value = '';
+        currentEditLessonId = null;
+    }
+
+    async function showAddLessonModal() {
+        if (!studentSubjectId) {
+            showError('У ученика не назначен предмет');
+            return;
+        }
+
+        clearModal();
+        document.getElementById('lesson-modal-title').textContent = 'Новый урок';
+        document.getElementById('lesson-modal').classList.add('active');
+
+        if (topicsList.length === 0) {
+            await loadTopicsForSubject();
+        }
+        addTopicField();
+    }
+
+    async function editLesson(id) {
+        if (!studentSubjectId) {
+            showError('У ученика не назначен предмет');
+            return;
+        }
+
+        clearModal();
+        currentEditLessonId = id;
+        document.getElementById('lesson-modal-title').textContent = 'Редактировать урок';
+
+        try {
+            const response = await fetch(`${API_URL}/lesson/${id}`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+
+            if (!response.ok) throw new Error('Lesson not found');
+
+            const lesson = await response.json();
+
+            document.getElementById('lesson-id').value = lesson.id;
+            document.getElementById('lesson-date').value = lesson.lessonDate.slice(0, 16);
+            document.getElementById('lesson-attendance').value = lesson.attendance || '';
+
+            if (topicsList.length === 0) {
+                await loadTopicsForSubject();
+            }
+
+            if (lesson.topics && lesson.topics.length > 0) {
+                lesson.topics.forEach(topic => {
+                    addTopicField(topic.topicId, topic.masteryLevel, topic.id);
+                });
+            } else {
+                addTopicField();
+            }
+
+            document.getElementById('lesson-modal').classList.add('active');
+
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    function closeLessonModal() {
+        clearModal();
+        document.getElementById('lesson-modal').classList.remove('active');
+    }
+
+    async function saveLesson() {
+        const lessonDateVal = document.getElementById('lesson-date').value;
+        const attendanceVal = document.getElementById('lesson-attendance').value;
+        const topicsDataArray = getLessonTopicsData();
+
+        if (!lessonDateVal) {
+            showError("Выберите дату урока");
+            return;
+        }
+        if (!attendanceVal) {
+            showError("Выберите посещаемость");
+            return;
+        }
+        if (topicsDataArray.length === 0) {
+            showError("Добавьте хотя бы одну тему");
+            return;
+        }
+
+        const method = currentEditLessonId ? 'PUT' : 'POST';
+        const urlSuffix = currentEditLessonId ? `/${currentEditLessonId}` : '';
+
+        const lessonData = {
+            studentId: parseInt(studentId),
+            subjectId: studentSubjectId,
+            lessonDate: lessonDateVal,
+            attendance: attendanceVal,
+            topics: topicsDataArray
+        };
+
+        try {
+            const response = await fetch(`${API_URL}/lesson${urlSuffix}`, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify(lessonData)
+            });
+
+            if (response.ok) {
+                closeLessonModal();
+                await loadLessons();
+            } else {
+                const errText = await response.text();
+                showError(`Ошибка сохранения (${response.status}): ${errText}`);
+            }
+        } catch (err) {
+            showError("Сервер недоступен. Убедитесь, что он запущен на порту 8080.");
+            console.error(err);
+        }
+    }
+
+    async function deleteLesson(id) {
+        if (!confirm("Удалить этот урок? Это действие нельзя отменить.")) return;
+
+        try {
+            const response = await fetch(`${API_URL}/lesson/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+
+            if (response.ok) {
+                await loadLessons();
+            } else {
+                showError("Ошибка удаления урока.");
+            }
+        } catch (err) {
+            showError("Сервер недоступен.");
+        }
+    }
+
+    function viewLessonTopics(lessonId) {
+        alert(`Просмотр тем урока ${lessonId}\n(Функция в разработке)`);
+    }
+
+    function logout() {
+        localStorage.clear();
+        window.location.href = '/';
+    }
+
+    initPage();
+</script>
+</body>
+</html>

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Предметы и темы - TutorTrack</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="header">
+    <div class="logo">📚 TutorTrack</div>
+    <div class="nav">
+        <a href="/students">Студенты</a>
+        <a href="/subjects" class="active">Предметы</a>
+        <a href="/ratings">Рейтинги</a>
+    </div>
+    <div class="user-info">
+        <span id="user-role"></span>
+        <button class="logout-btn" onclick="logout()">Выйти</button>
+    </div>
+</div>
+
+<div class="container">
+    <h2>📚 Предметы и темы</h2>
+
+    <div id="error-message" class="error"></div>
+
+    <div>
+        <button class="add-btn" onclick="showAddSubjectModal()">➕ Добавить предмет</button>
+    </div>
+
+    <div id="subjects-container"></div>
+</div>
+
+<div id="subject-modal" class="modal">
+    <div class="modal-content">
+        <h3 id="subject-modal-title">Новый предмет</h3>
+        <input type="text" id="subject-name" placeholder="Название предмета">
+        <input type="hidden" id="subject-id">
+        <button onclick="saveSubject()">Сохранить</button>
+        <button onclick="closeSubjectModal()">Отмена</button>
+    </div>
+</div>
+
+<div id="topic-modal" class="modal">
+    <div class="modal-content">
+        <h3>Новая тема</h3>
+        <input type="text" id="topic-name" placeholder="Название темы">
+        <input type="hidden" id="topic-subject-id">
+        <input type="hidden" id="topic-id">
+        <button onclick="saveTopic()">Сохранить</button>
+        <button onclick="closeTopicModal()">Отмена</button>
+    </div>
+</div>
+
+<script>
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+
+    if (!token) {
+        window.location.href = '/';
+    }
+
+    if (role !== 'TEACHER') {
+        window.location.href = '/ratings';
+    }
+
+    document.getElementById('user-role').textContent = role === 'TEACHER' ? '👨‍🏫 Учитель' : '👩‍🎓 Ученик';
+
+    async function loadSubjects() {
+        try {
+            const response = await fetch('http://localhost:8080/api/subject', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+
+            if (response.status === 401 || response.status === 403) {
+                localStorage.clear();
+                window.location.href = '/';
+                return;
+            }
+
+            if (!response.ok) throw new Error('Ошибка загрузки');
+
+            const subjects = await response.json();
+            renderSubjects(subjects);
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    async function loadTopics(subjectId) {
+        try {
+            const response = await fetch(`http://localhost:8080/api/topic/subject/${subjectId}`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (!response.ok) throw new Error('Ошибка загрузки тем');
+            return await response.json();
+        } catch (err) {
+            showError(err.message);
+            return [];
+        }
+    }
+
+    function renderSubjects(subjects) {
+        const container = document.getElementById('subjects-container');
+        container.innerHTML = '';
+
+        for (const subject of subjects) {
+            const subjectDiv = document.createElement('div');
+            subjectDiv.className = 'subject-card';
+            subjectDiv.innerHTML = `
+                <div class="subject-header" onclick="toggleTopics(${subject.id})">
+                    <span class="subject-name">📘 ${subject.name}</span>
+                    <div class="subject-actions">
+                        <button class="edit-btn" onclick="event.stopPropagation(); editSubject(${subject.id}, '${subject.name}')">✏️</button>
+                        <button class="delete-btn" onclick="event.stopPropagation(); deleteSubject(${subject.id})">🗑</button>
+                    </div>
+                </div>
+                <div class="topic-list" id="topics-${subject.id}">
+                    <div id="topics-content-${subject.id}">Загрузка...</div>
+                    <button class="add-topic-btn" onclick="event.stopPropagation(); showAddTopicModal(${subject.id})">+ Добавить тему</button>
+                </div>
+            `;
+            container.appendChild(subjectDiv);
+
+            // Загружаем темы для предмета
+            loadTopics(subject.id).then(topics => {
+                renderTopics(subject.id, topics);
+            });
+        }
+    }
+
+    function renderTopics(subjectId, topics) {
+        const container = document.getElementById(`topics-content-${subjectId}`);
+        if (!container) return;
+
+        if (topics.length === 0) {
+            container.innerHTML = '<div style="padding: 10px; color: #999;">Нет тем</div>';
+            return;
+        }
+
+        container.innerHTML = topics.map(topic => `
+            <div class="topic-item">
+                <span>📖 ${topic.name}</span>
+                <div>
+                    <button class="edit-btn" onclick="editTopic(${topic.id}, ${subjectId}, '${topic.name}')">✏️</button>
+                    <button class="delete-btn" onclick="deleteTopic(${topic.id})">🗑</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function toggleTopics(subjectId) {
+        const element = document.getElementById(`topics-${subjectId}`);
+        element.classList.toggle('open');
+    }
+
+    async function saveSubject() {
+        const id = document.getElementById('subject-id').value;
+        const name = document.getElementById('subject-name').value;
+
+        if (!name) {
+            showError('Введите название предмета');
+            return;
+        }
+
+        try {
+            let response;
+            if (id) {
+                response = await fetch(`http://localhost:8080/api/subject/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ id, name })
+                });
+            } else {
+                response = await fetch('http://localhost:8080/api/subject', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ name })
+                });
+            }
+
+            if (response.ok) {
+                closeSubjectModal();
+                loadSubjects();
+            } else {
+                showError('Ошибка сохранения');
+            }
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    async function deleteSubject(id) {
+        if (!confirm('Удалить предмет? Все темы внутри также будут удалены.')) return;
+
+        try {
+            const response = await fetch(`http://localhost:8080/api/subject/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+
+            if (response.ok) {
+                loadSubjects();
+            } else {
+                showError('Ошибка удаления');
+            }
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    async function saveTopic() {
+        const id = document.getElementById('topic-id').value;
+        const name = document.getElementById('topic-name').value;
+        const subjectId = document.getElementById('topic-subject-id').value;
+
+        if (!name) {
+            showError('Введите название темы');
+            return;
+        }
+
+        try {
+            let response;
+            if (id) {
+                response = await fetch(`http://localhost:8080/api/topic/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ id, name, subjectId })
+                });
+            } else {
+                response = await fetch('http://localhost:8080/api/topic', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ name, subjectId })
+                });
+            }
+
+            if (response.ok) {
+                closeTopicModal();
+                loadSubjects();
+            } else {
+                showError('Ошибка сохранения темы');
+            }
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    async function deleteTopic(id) {
+        if (!confirm('Удалить тему?')) return;
+
+        try {
+            const response = await fetch(`http://localhost:8080/api/topic/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+
+            if (response.ok) {
+                loadSubjects();
+            } else {
+                showError('Ошибка удаления темы');
+            }
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    function showAddSubjectModal() {
+        document.getElementById('subject-modal-title').textContent = 'Новый предмет';
+        document.getElementById('subject-id').value = '';
+        document.getElementById('subject-name').value = '';
+        document.getElementById('subject-modal').classList.add('active');
+    }
+
+    function editSubject(id, name) {
+        document.getElementById('subject-modal-title').textContent = 'Редактировать предмет';
+        document.getElementById('subject-id').value = id;
+        document.getElementById('subject-name').value = name;
+        document.getElementById('subject-modal').classList.add('active');
+    }
+
+    function showAddTopicModal(subjectId) {
+        document.getElementById('topic-id').value = '';
+        document.getElementById('topic-name').value = '';
+        document.getElementById('topic-subject-id').value = subjectId;
+        document.getElementById('topic-modal').classList.add('active');
+    }
+
+    function editTopic(id, subjectId, name) {
+        document.getElementById('topic-id').value = id;
+        document.getElementById('topic-name').value = name;
+        document.getElementById('topic-subject-id').value = subjectId;
+        document.getElementById('topic-modal').classList.add('active');
+    }
+
+    function closeSubjectModal() {
+        document.getElementById('subject-modal').classList.remove('active');
+    }
+
+    function closeTopicModal() {
+        document.getElementById('topic-modal').classList.remove('active');
+    }
+
+    function showError(msg) {
+        const errorDiv = document.getElementById('error-message');
+        errorDiv.textContent = msg;
+        errorDiv.style.display = 'block';
+        setTimeout(() => errorDiv.style.display = 'none', 3000);
+    }
+
+    function logout() {
+        localStorage.clear();
+        window.location.href = '/';
+    }
+
+    loadSubjects();
+</script>
+</body>
+</html>

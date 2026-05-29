@@ -1,30 +1,38 @@
 server:
   port: 8081
+
 spring:
   application:
     name: auth-service
+
   datasource:
-    url: jdbc:postgresql://localhost:5432/tutortrack
-    username: postgres
-    password: postgres
+    url: jdbc:postgresql://localhost:5432/tutortrack?currentSchema=auth_schema
+    username: postgres #tutortrack_user
+    password: admin #tutortrack_pass
     driver-class-name: org.postgresql.Driver
+
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: true
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
-jwt:
-  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-  expiration: 86400000  # 24 hours in milliseconds
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    schemas: auth_schema
+    locations:
+      - classpath:db/migration/postgresql
+      - classpath:db/seed/postgresql
 
-# Logging
+jwt:
+  secret: YB5DinYKCMeVXoUUjmWVnSKNBGfeeNkH
+  expiration: 86400000
+
 logging:
   level:
     com.tutortrack: DEBUG
     org.springframework.security: DEBUG
-
-

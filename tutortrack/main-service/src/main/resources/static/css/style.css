@@ -1,0 +1,469 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f5f5f5;
+}
+
+/* Шапка */
+.header {
+    background: #667eea;
+    color: white;
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.nav {
+    display: flex;
+    gap: 30px;
+}
+
+.nav a {
+    color: white;
+    text-decoration: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+.nav a:hover,
+.nav a.active {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.logout-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.logout-btn:hover {
+    background: #c82333;
+}
+
+/* Контейнер для контента */
+.container {
+    max-width: 1200px;
+    margin: 20px auto;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+}
+
+/* Заголовки */
+h2 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+h3 {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+/* Кнопки */
+.add-btn {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+.add-btn:hover {
+    background: #218838;
+}
+
+.edit-btn {
+    background: #ffc107;
+    color: #333;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.delete-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+/* Таблицы */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background: #f8f9fa;
+    color: #333;
+}
+
+/* Карточки предметов */
+.subject-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    overflow: hidden;
+}
+
+.subject-header {
+    background: #f8f9fa;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+.subject-header:hover {
+    background: #e9ecef;
+}
+
+.subject-name {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+}
+
+.subject-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.topic-list {
+    padding: 15px;
+    border-top: 1px solid #eee;
+    display: none;
+}
+
+.topic-list.open {
+    display: block;
+}
+
+.topic-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.topic-item:last-child {
+    border-bottom: none;
+}
+
+.add-topic-btn {
+    background: #17a2b8;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+/* Модальные окна */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 400px;
+}
+
+.modal-content input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.modal-content button {
+    padding: 10px 15px;
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+.student-selector {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+.student-selector label {
+    font-weight: bold;
+    margin-right: 10px;
+}
+.student-selector select {
+    padding: 8px;
+    width: 250px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+.subject-card {
+    margin-bottom: 20px;
+}
+.subject-title {
+    font-size: 18px;
+    font-weight: bold;
+    background: #667eea;
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+.topic-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+.topic-name {
+    flex: 2;
+}
+.mastery-level {
+    flex: 1;
+    text-align: center;
+}
+.mastery-badge {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+    text-align: center;
+    border-radius: 50%;
+    font-weight: bold;
+    color: white;
+}
+.mastery-1 { background: #dc3545; }
+.mastery-2 { background: #fd7e14; }
+.mastery-3 { background: #ffc107; color: #333; }
+.mastery-4 { background: #28a745; }
+.mastery-5 { background: #20c997; }
+.progress-bar {
+    flex: 2;
+    height: 20px;
+    background: #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+}
+.progress-fill {
+    height: 100%;
+    background: #28a745;
+    border-radius: 10px;
+    transition: width 0.3s;
+}
+.info-message {
+    color: #666;
+    font-style: italic;
+}
+table {
+    margin-top: 10px;
+}
+
+.info-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .info-row {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        .info-label {
+            width: 120px;
+            font-weight: bold;
+            color: #555;
+        }
+        .info-value {
+            flex: 1;
+            color: #333;
+        }
+        .lessons-table {
+            margin-top: 20px;
+        }
+        .lesson-row {
+            cursor: pointer;
+        }
+        .lesson-row:hover {
+            background: #f5f5f5;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .topic-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .topic-select {
+            flex: 2;
+            margin-right: 10px;
+        }
+        .mastery-select {
+            width: 80px;
+        }
+        .add-topic-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .topic-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            padding: 8px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+
+        .topic-select {
+            flex: 2;
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .mastery-select {
+            flex: 1;
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .delete-topic-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.2s;
+        }
+
+        .delete-topic-btn:hover {
+            background: #c82333;
+        }
+
+        .add-topic-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 12px;
+            cursor: pointer;
+            margin-top: 5px;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .add-topic-btn:hover {
+            background: #218838;
+        }
+
+/* Ошибки */
+.error {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    display: none;
+}
